@@ -1,0 +1,2 @@
+inclue *.txt
+recursive-include docs *.txt

@@ -1,3 +1,23 @@
+*.pdf
+*.ps
+*.eps
+*.png
+
+
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+
 *.py[cod]
 
 # C extensions
@@ -10,7 +30,7 @@ dist
 build
 eggs
 parts
-bin
+#bin
 var
 sdist
 develop-eggs
@@ -33,3 +53,6 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+
+.pdb-pyhist
