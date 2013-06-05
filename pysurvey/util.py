@@ -288,5 +288,20 @@ def splog(*args, **kwargs):
 
 
 
+def getargs(fcn, **kwargs):
+    args, vargs, keywords, _ = inspect.getargspec(fcn)
+    if keywords is not None:
+        raise NotImplementedError('kwargs are not setup... yeah fix that')
+    out = {}
+    for arg in args:
+        tmp = kwargs.pop(arg, None)
+        if tmp is not None:
+            out[arg] = tmp
+    return out, kwargs
+
+    
+
+
+
 
 

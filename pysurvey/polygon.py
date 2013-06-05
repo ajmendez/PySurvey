@@ -7,7 +7,7 @@ import numpy as np
 
 # [Package]
 from location import radec2xy
-from mangle import Mangle
+from oldmangle import Mangle
 
 # [Constants]
 

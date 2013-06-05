@@ -12,7 +12,7 @@ import numpy as np
 # [Constants]
 
 
-
+# TODO clean up.  a bunch of this is not being used or redundant.
 
 
 

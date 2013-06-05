@@ -3,16 +3,19 @@
 
 # System Libraries
 import os
+import copy
 
 # Installed Libraries
 import pylab
+import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.gridspec as gridspec
-import numpy as np
+import mpl_toolkits.axes_grid1 as axes_grid1
 
 # Package Imports
-from util import splog
+from util import splog, embiggen, minmax
 from file import nicefile
+from math import blur_image
 
 OUTDIR = nicefile('$PYSURVEY_FIGURE')
 
@@ -36,12 +39,14 @@ def saveplot(filename, clear=True, ext='.png', paper=False):
 
 
 class PDF(object):
-    def __init__(self, filename, ext='.pdf'):
+    def __init__(self, filename, figsize=None, ext='.pdf'):
         '''Makes a nice little pdf'''
         if not os.path.isabs(filename):
             filename = os.path.join(OUTDIR,filename+ext)
         self.pdf = PdfPages(filename)
-    
+        if figsize is not None:
+            pylab.figure('pdf_fig', figsize=figsize)
+            
     def __enter__(self):
         '''Start with with constructor.'''
         return self
@@ -103,7 +108,7 @@ def setup(subplt=None,
     if subplt is None:
         ax = pylab.gca()
     elif (isinstance(subplt, int) or 
-          isinstance(subplt, matplotlib.gridspec.GridSpec) ):
+          isinstance(subplt, gridspec.GridSpec) ):
         ax = pylab.subplot(subplt)
     else:
         ax = pylab.subplot(*subplt)
@@ -162,7 +167,7 @@ def setup(subplt=None,
         if not (isinstance(subplt, tuple) and len(subplt) == 3):
             splog('Cannot setup auto ticks without a proper subplot')
         else:
-            if isinstance(subplt, matplotlib.gridspec.SubplotSpec):
+            if isinstance(subplt, gridspec.SubplotSpec):
                 rows,cols,i, _ = subplt.get_geometry()
                 i += 1 # i is 0 indexed.
             else:
@@ -174,16 +179,15 @@ def setup(subplt=None,
                 xticks = False
     
     
-    
     # Tickmark hiding -- used by autoticks as well.
     if xticks is False:
         # ax.set_xticklabels([])
-        # ax.set_xlabel('') 
+        ax.set_xlabel('') 
         pylab.setp(ax.get_xticklabels(), visible=False)
         
     if yticks is False:
         # ax.set_yticklabels([])
-        # ax.set_ylabel('')
+        ax.set_ylabel('')
         pylab.setp(ax.get_yticklabels(), visible=False)
     
     
@@ -211,6 +215,185 @@ def setup(subplt=None,
     
     # temp
     return ax
+
+
+
+
+
+
+
+
+
+
+
+
+### Spatial things
+
+
+def _getextent(extent, X,Y):
+    '''Return the extent :: extent = (xmin, xmax, ymin, ymax) '''
+    if extent is None:
+        extent = minmax(X,nan=False) + minmax(Y, nan=False)
+    return extent
+    
+def _getvrange(vrange, Z, p=0.05):
+    '''Return the vertical / value range'''
+    if vrange is None:
+        vrange = embiggen(minmax(Z, nan=False), p, mode='upper')
+    return vrange
+
+def _getcmap(cmap):
+    '''Build a nice colormap'''
+    if cmap is None:
+        cmap = copy.copy(pylab.cm.gray_r)
+        cmap.set_bad('r',1.)
+    return cmap
+
+def colorbar(a, b=None, clabel=None, 
+             levels=None, size='2%', pad=0.02, ):
+    '''Builds a nice colorbar a is an image or contour or scalable,
+    b is another scaleable -- eg contour lines'''
+    ax = pylab.gca()
+    divider = axes_grid1.make_axes_locatable(ax)
+    cax = divider.append_axes("right", size=size, pad=pad)
+    
+    cb = pylab.colorbar(a, cax=cax)
+    if b is not None:
+        cb.add_lines(b)
+        if levels is not None:
+            cb.set_ticks(levels)
+            cb.set_ticklabels(['%2.2f'%x for x in levels])
+    if clabel is not None:
+        cb.set_label(clabel)
+    pylab.sca(ax)
+    return cb
+    
+
+
+def image(X,Y,Z, origin='lower', interpolation='nearest',
+          vrange=None, extent=None, 
+          cmap=None, addcolorbar=True, clabel=None):
+    '''A nice wrapper around imshow.
+    vrange = (vmin, vmax) -- Z value range
+    cmap = colormap
+    
+    '''
+    
+    # calculate the spatial location and vertical / value range
+    extent = _getextent(extent, X, Y)
+    vrange = _getvrange(vrange, Z)
+    
+    # get a nice color map with nans set to be
+    cmap = _getcmap(cmap)
+    
+    # Make the masked array hiding the nans
+    MZ = np.ma.array(Z, mask=(np.isfinite(Z) is False) )
+    
+    out = []
+    
+    im = pylab.imshow(MZ, origin=origin, extent=extent,
+                      vmin=vrange[0], vmax=vrange[1],
+                      cmap=cmap, interpolation='nearest')
+    
+    # setup a colorbar and return it out for modifications
+    if addcolorbar:
+        cb = colorbar(im, clabel=clabel)
+        return im, cb
+    
+    return im
+
+
+
+def _getlevels(levels, vrange):
+    if levels is None:
+        if vrange[0] < 0:
+            levels = np.linspace(vrange[0],vrange[1], 15)
+        else:
+            levels = np.logspace(np.log10(vrange[0]), np.log10(vrange[1]), 7)
+    return levels
+
+def _smooth(X,Y,Z, smoothlen):
+    if smoothlen is None:
+        smoothlen = 1.0
+    
+    if len(X.shape) == 1 and len(Y.shape) == 1:
+        X, Y = np.meshgrid(X,Y)
+    out = []
+    for A in (Z, ):
+        out.append(blur_image(A, smoothlen))
+    # print len(X), len(Z), len(out[0])
+    # return out
+    return X,Y, out[0]
+        
+
+
+def contour(X,Y,Z, 
+           extent=None, vrange=None, levels=None, extend='both', 
+           cmap=None, addcolorbar=True, clabel=None,
+           smooth=True, smoothlen=None):
+    '''Build a super fancy contour image'''
+    
+    # Build up some nice ranges and levels to be plotted 
+    extent = _getextent(extent, X, Y)
+    vrange = _getvrange(vrange, Z)
+    levels = _getlevels(levels, vrange)
+    cmap   = _getcmap(cmap)
+    
+    # Smooth if needed
+    if smooth:
+        X,Y,Z = _smooth(X,Y,Z, smoothlen)
+    
+    cs = pylab.contourf(X, Y, Z, levels,
+                       vmin=vrange[0], vmax=vrange[1],
+                       extent=extent, extend='both',
+                       cmap=cmap)
+    ccs = pylab.contour(X, Y, Z, levels, vmin=vrange[0], vmax=vrange[1],
+                        cmap=cmap)
+    
+    # setup a colorbar, add in the lines, and then return it all out.
+    if addcolorbar:
+        cb = colorbar(cs, ccs, levels=levels, clabel=clabel)
+        return cs, ccs, cb
+    
+    return cs, ccs
+
+
+
+### Helper function things
+
+
+
+def line(X=None, Y=None, **kwargs):
+    '''X,Y Arrays of lines to plot'''
+    xmin,xmax,ymin,ymax = pylab.axis()
+    kwargs.setdefault('color','orange')
+    kwargs.setdefault('fmt','-')
+    
+    if X is not None:
+        if isinstance(X, (float, int)):
+            X = [X]
+        for x in X:
+            pylab.plot(np.ones(2)*x, [ymin, ymax], **kwargs)
+    if Y is not None:
+        if isinstance(Y, (float, int)):
+            Y = [Y]
+        for y in Y:
+            pylab.plot([xmin, xmax], np.ones(2)*y, **kwargs)
+
+
+
+
+
+
+
+### sky plots
+def sky(ra, dec, **kwargs):
+    ''' Basemap setup'''
+    
+    
+
+
+
 
 
 
