@@ -39,13 +39,12 @@ def saveplot(filename, clear=True, ext='.png', paper=False):
 
 
 class PDF(object):
-    def __init__(self, filename, figsize=None, ext='.pdf'):
+    def __init__(self, filename, ext='.pdf', **kwargs):
         '''Makes a nice little pdf'''
         if not os.path.isabs(filename):
             filename = os.path.join(OUTDIR,filename+ext)
         self.pdf = PdfPages(filename)
-        if figsize is not None:
-            pylab.figure('pdf_fig', figsize=figsize)
+        pylab.figure('pdf_fig', **kwargs)
             
     def __enter__(self):
         '''Start with with constructor.'''
@@ -69,10 +68,23 @@ class PDF(object):
 
 
 def legend(textsize=9, **kwargs):
-    '''Set a better legend'''
+    '''Set a better legend
+    zorder=int -- layer ordering
+    box = T/F -- draw the box or not'''
+    zorder = kwargs.pop('zorder',None)
+    box = kwargs.pop('box', None)
     kwargs.setdefault('numpoints',1)
     kwargs.setdefault('prop',{'size':textsize})
-    return pylab.legend(**kwargs)
+    
+    l = pylab.legend(**kwargs) 
+    
+    
+    if zorder is not None:
+        l.set_zorder(zorder)
+    
+    if box is not None:
+        l.draw_frame(box)
+    return l
     
     
     
@@ -87,7 +99,7 @@ def setup(subplt=None,
           xticks=True, yticks=True, autoticks=False,
           subplot=None,
           grid=True, tickmarks=True, font=True,
-          adjust=True, hspace=0.1, wspace=0.1,
+          adjust=True, hspace=0.1, wspace=0.1, aspect=None
           ):
     '''Setup some nice defaults so that we are all fancy like
     
@@ -212,6 +224,12 @@ def setup(subplt=None,
         # pylab.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman']})
         # pylab.rc('text', usetex=True)
         pass
+    
+    if aspect is not None:
+        # 'auto', 'equal'
+        ax.set_aspect(aspect)
+        print aspect
+    
     
     # temp
     return ax
@@ -363,22 +381,24 @@ def contour(X,Y,Z,
 
 
 
-def line(X=None, Y=None, **kwargs):
+def line(x=None, y=None, **kwargs):
     '''X,Y Arrays of lines to plot'''
     xmin,xmax,ymin,ymax = pylab.axis()
     kwargs.setdefault('color','orange')
-    kwargs.setdefault('fmt','-')
+    kwargs.setdefault('linestyle','-')
+    kwargs.setdefault('linewidth', 2)
     
-    if X is not None:
-        if isinstance(X, (float, int)):
-            X = [X]
-        for x in X:
-            pylab.plot(np.ones(2)*x, [ymin, ymax], **kwargs)
-    if Y is not None:
-        if isinstance(Y, (float, int)):
-            Y = [Y]
-        for y in Y:
-            pylab.plot([xmin, xmax], np.ones(2)*y, **kwargs)
+    if x is not None:
+        if isinstance(x, (float, int)):
+            x = [x]
+        for a in x:
+            pylab.plot(np.ones(2)*a, [ymin, ymax], **kwargs)
+            print np.ones(2)*a, [ymin, ymax]
+    if y is not None:
+        if isinstance(y, (float, int)):
+            y = [y]
+        for a in y:
+            pylab.plot([xmin, xmax], np.ones(2)*a, **kwargs)
 
 
 
