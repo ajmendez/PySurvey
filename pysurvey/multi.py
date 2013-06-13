@@ -99,11 +99,11 @@ def multi_process(fcn, args, n=None):
 
 
 ##### Threading vs processes
-import logging
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-10s) %(message)s',
-                    )
-exitFlag = 0
+# import logging
+# logging.basicConfig(level=logging.DEBUG,
+#                     format='(%(threadName)-10s) %(message)s',
+#                     )
+# exitFlag = 0
 
 
 

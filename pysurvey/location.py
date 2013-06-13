@@ -10,6 +10,16 @@ import cosmolopy
 
 # [Constants]
 
+def _cosmology():
+    '''returns the values that match kCorrect and idl'''
+    # p = cosmolopy.fidcosmo # default values from cosmolpy
+    p  = {
+        'h': 0.7,
+        'omega_M_0':0.3, 
+        'omega_lambda_0':0.7,
+        'sigma_8':0.8,
+    }
+    return p
 
 def radec2xy(header, ra, dec):
     '''From a header, and radec position, return the x,y position relative to an image'''
@@ -38,7 +48,7 @@ def convert2distance(ra, dec, z, center):
     '''Convert ra,dec,z into Mpc/h units
     
     '''    
-    p = cosmolopy.fidcosmo
+    p = _cosmology()
     dt = cosmolopy.distance.comoving_distance_transverse(z, **p)*p['h']
     rx = dt*np.radians(ra - center[0])
     ry = dt*np.radians(dec - center[1])

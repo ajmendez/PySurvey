@@ -16,6 +16,7 @@ from clint.textui import colored, puts
 
 # nice variables
 SPLOG = {'multi':False, # multiprocessing setup
+         'outfile':None, # save to disk
         }
 
 
@@ -280,8 +281,18 @@ def splog(*args, **kwargs):
               f('%s.%s '%(module,name))+
               ' '.join('%s'%s for s in args))
     
+    if SPLOG['outfile'] is not None:
+        # There is probably a better way of keeping this file open
+        # in the SPLOG dict, but since this is not suppose to be run
+        # at high frequency lets just keep open and closing the file.
+        with open(SPLOG['outfile'], 'a+') as f:
+            f.write('[%s]: %s\n'%(datetime.datetime.now(), output))
+    
     if kwargs.get('getstr',False):
         return output 
+    
+
+            
     
     puts(output)
 

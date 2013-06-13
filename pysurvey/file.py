@@ -175,13 +175,14 @@ class Cat(object):
 
 
 
-def write(hdu, filename, quiet=False, clobber=True):
+def write(hdu, filename, quiet=False, clobber=True, shortdir=None):
     '''Write a nice fits file.  Filenames with .gz will be compressed using the system
     gzip call.  hdu can be either a column table list or a pyfits.bintable object.
     it notifies the user what was written.
     
     clobber=[True] -- Overwrite files by default
     quiet=[False]  -- Do not announce that we are writing a file.  Why would you not?
+    shortdir=['/path/','<Dir>'] -- Shorten the filename that is printed out to the screen
     '''        
     
     # Handle column lists and hdus
@@ -204,8 +205,10 @@ def write(hdu, filename, quiet=False, clobber=True):
     # play with matches if you want.
     if not quiet:
         # print "Saved to: %s"%(filename)
-        # splog('Saved to:',filename.replace(MAINDIR,'<maindir>'))
-        splog('Saved to:', filename)
+        if shortdir is not None:
+            splog('Saved to:', filename.replace(shortdir[0], shortdir[1]))
+        else:
+            splog('Saved to:', filename)
 
 
 

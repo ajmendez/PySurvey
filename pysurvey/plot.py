@@ -20,19 +20,24 @@ from math import blur_image
 OUTDIR = nicefile('$PYSURVEY_FIGURE')
 
 
-def saveplot(filename, clear=True, ext='.png', paper=False):
+def saveplot(filename, clear=True, ext=None):
     '''Save the current figure to a specific filename.  If the
     filename is not an absolute path it uses the $PYSURVEY_FIGURE
     directory'''
-    if not os.path.isabs(filename):
-        if paper:
-            outname = (OUTDIR, 'paper', filename+ext)
+    if ext is None:
+        tmp = os.path.splitext(filename)
+        if len(tmp[1]) == 0:
+            ext = '.png'
         else:
-            outname = (OUTDIR, filename+ext)
-        filename = os.path.join(*outname)
+            filename, ext = tmp
+
+    if not os.path.isabs(filename):
+        filename = os.path.join(OUTDIR, filename)
+    filename += '.'+ext.replace('.','')
+    
     
     pylab.savefig(filename, dpi=150)
-    splog('Saved Figure: ', filename+ext)
+    splog('Saved Figure:', filename)
     if clear:
         pylab.clf()
 
@@ -67,23 +72,38 @@ class PDF(object):
     
 
 
-def legend(textsize=9, **kwargs):
+def legend(handles=None, labels=None, 
+           textsize=9, zorder=None, box=None, 
+           reverse=False, **kwargs):
     '''Set a better legend
     zorder=int -- layer ordering
-    box = T/F -- draw the box or not'''
-    zorder = kwargs.pop('zorder',None)
-    box = kwargs.pop('box', None)
+    box = T/F -- draw the box or not
+    
+    http://matplotlib.org/users/legend_guide.html
+    '''
     kwargs.setdefault('numpoints',1)
     kwargs.setdefault('prop',{'size':textsize})
     
-    l = pylab.legend(**kwargs) 
+    args = []
+    if handles is not None:
+        args.append(handles)
+    if labels is not None:
+        args.append(labels)
     
+    l = pylab.legend(*args, **kwargs) 
+    
+    if reverse:
+        ax = pylab.gca()
+        handles, labels = ax.get_legend_handles_labels()
+        
+        return legend(handles[::-1], labels[::-1], zorder=zorder, box=box, **kwargs)
     
     if zorder is not None:
         l.set_zorder(zorder)
     
     if box is not None:
         l.draw_frame(box)
+    
     return l
     
     
@@ -93,7 +113,7 @@ def setup(subplt=None,
           xr=None, yr=None,
           xlog=False, ylog=False,
           xlabel=None, ylabel=None, 
-          suptitle=None,
+          suptitle=None, suptitle_prop=None, 
           subtitle=None, subtitle_prop=None, subtitleloc=1,
           title=None,
           xticks=True, yticks=True, autoticks=False,
@@ -132,7 +152,7 @@ def setup(subplt=None,
     if yr is not None:
         ax.set_ylim(yr)
         pylab.autoscale(False, 'y', True)
-    
+        
     # Log stuff -- do this afterwards to ensure the minor tick marks are updated
     # can set the specific ticks using subsx, subsy -- 
     #   ax.set_xscale('log', subsx=[2, 3, 4, 5, 6, 7, 8, 9])
@@ -152,7 +172,9 @@ def setup(subplt=None,
     if title is not None:
         pylab.title(title)
     if suptitle is not None:
-        pylab.suptitle(suptitle)
+        if suptitle_prop is None:
+            suptitle_prop = {}
+        pylab.suptitle(suptitle, **suptitle_prop)
     if subtitle is not None:
         if subtitleloc == 1:
             prop = {'location':(0.95,0.95),
@@ -228,7 +250,6 @@ def setup(subplt=None,
     if aspect is not None:
         # 'auto', 'equal'
         ax.set_aspect(aspect)
-        print aspect
     
     
     # temp
@@ -268,7 +289,8 @@ def _getcmap(cmap):
     return cmap
 
 def colorbar(a, b=None, clabel=None, 
-             levels=None, size='2%', pad=0.02, ):
+             levels=None, levellabels=None,
+             size='2%', pad=0.02, ):
     '''Builds a nice colorbar a is an image or contour or scalable,
     b is another scaleable -- eg contour lines'''
     ax = pylab.gca()
@@ -280,7 +302,9 @@ def colorbar(a, b=None, clabel=None,
         cb.add_lines(b)
         if levels is not None:
             cb.set_ticks(levels)
-            cb.set_ticklabels(['%2.2f'%x for x in levels])
+            if levellabels is None:
+                levellabels = ['%2.2f'%x for x in levels]
+            cb.set_ticklabels(levellabels)
     if clabel is not None:
         cb.set_label(clabel)
     pylab.sca(ax)
@@ -376,6 +400,96 @@ def contour(X,Y,Z,
     return cs, ccs
 
 
+def _crange(xmin, xmax, nbin):
+    if xmin > xmax: xmin, xmax = xmax, xmin
+    xmin, xmax = embiggen([xmin,xmax], 0.1)
+    bins = np.linspace(xmin, xmax, nbin+1)
+    delta = (bins[1] - bins[0])/2.0
+    return bins,delta
+
+
+
+def scontour(x,y, levels=None, nbin=20,
+             frac_contour=False,
+             fill_contour=True, 
+             add_bar=False, 
+             smooth=False, smoothlen=None,
+             **kwargs):
+    '''contour a scatter plot'''
+    '''Contour the data for the bulk bits
+    returns the outermost polygon
+    '''
+    
+    tmp = {
+        'color': '0.6',
+        'alpha': 0.8,
+        'cmap': pylab.cm.gray_r,
+    }
+    tmp.update(kwargs)
+    
+    # make sure that we have good bounds for the 2d contouring
+    xmin,xmax,ymin,ymax = pylab.axis()
+    xbin, xdelta = _crange(xmin, xmax, nbin)
+    ybin, ydelta = _crange(ymin, ymax, nbin)
+
+    # find the height map for the points
+    H, _, _ = np.histogram2d(x, y, bins=(xbin,ybin))
+    
+
+    
+    # sort by the cumulative number for each point in the Height map
+    if frac_contour:
+        if levels is None: 
+            levels = np.linspace(0.1,1.0, 5)
+        t = np.reshape(H,-1)
+        ii = np.argsort(t)
+        t = np.cumsum(t[ii]) / np.sum(t)
+        H[np.unravel_index(ii,H.shape)] = t
+    
+    if levels is None:
+        # levels = np.logspace(np.log10(0.2),np.log10(1.0), 5)
+        levels = np.linspace(0.3*np.nanmax(H), np.nanmax(H)*1.05, 6)
+    
+    # plot the resulting contours X,Y are centers rather than edges
+    X, Y = np.meshgrid(xbin[:-1]+xdelta, ybin[1:]-ydelta)
+    if smooth:
+        X,Y,H = _smooth(X,Y,H, smoothlen)
+    
+    if fill_contour:
+        con = pylab.contourf(X,Y,H.T,levels, **tmp)
+        conl = pylab.contour(X,Y,H.T,levels, colors='0.8', linewidths=1.1)
+    else:
+        con = pylab.contour(X,Y,H.T,levels, **tmp)
+        conl = None
+    
+    if add_bar:
+        label = kwargs.get('label', None)
+        if frac_contour:
+            # I hope you dont want to use levels below here becuase I am adjusting it
+            levels = levels[1:-1]
+            labels = ['%0.1f'%(1-t) for t in levels]
+            if label is None:
+                label = 'Fraction of Sample'
+            
+        cb = colorbar(con, conl, clabel=label, levels=levels, levellabels=labels)
+        
+        if frac_contour:
+            cb.ax.invert_yaxis()
+    else:
+        cb = None
+    
+    return con, cb
+
+
+
+
+
+
+
+
+
+
+
 
 ### Helper function things
 
@@ -393,7 +507,6 @@ def line(x=None, y=None, **kwargs):
             x = [x]
         for a in x:
             pylab.plot(np.ones(2)*a, [ymin, ymax], **kwargs)
-            print np.ones(2)*a, [ymin, ymax]
     if y is not None:
         if isinstance(y, (float, int)):
             y = [y]

@@ -5,8 +5,10 @@
 # [Installed]
 import pylab
 import numpy as np
+import scipy
 import scipy.signal
 import scipy.optimize 
+from scipy.interpolate import interp1d
 
 # [Package]
 
@@ -83,3 +85,28 @@ def fit(function, parameters, x, y, yerr=None):
         return [-999.0 for param in parameters]
     else:
         return [param() for param in parameters]
+
+
+
+
+
+
+
+
+def extrap1d(interpolator):
+    ''' http://stackoverflow.com/questions/2745329/how-to-make-scipy-interpolate-give-an-extrapolated-result-beyond-the-input-range'''
+    xs = interpolator.x
+    ys = interpolator.y
+
+    def pointwise(x):
+        if x < xs[0]:
+            return ys[0]+(x-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
+        elif x > xs[-1]:
+            return ys[-1]+(x-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
+        else:
+            return interpolator(x)
+
+    def ufunclike(xs):
+        return scipy.array(map(pointwise, scipy.array(xs)))
+
+    return ufunclike
