@@ -4,7 +4,7 @@ pysurvey -- Working with fancy things.
 
 
 from plot import saveplot, PDF, setup, legend
-from util import splog, minmax, uniqify, uniq, deltatime, print_uniq, uniq_dict, getargs, embiggen
+from util import splog, minmax, uniqify, uniq, deltatime, print_uniq, uniq_dict, getargs, embiggen, gethostname, ishostname
 from file import nicefile, Cat, write, fromHDU
 from bins import Bins
 

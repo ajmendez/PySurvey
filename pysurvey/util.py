@@ -3,6 +3,7 @@
 
 # System Libraries
 import os
+import socket
 import datetime
 import inspect
 import collections
@@ -20,7 +21,24 @@ SPLOG = {'multi':False, # multiprocessing setup
         }
 
 
+def gethostname():
+    '''Get the hostname of the current machine.  This is a wrapper around socket.gethostname
+    since it is nice to attempt to get the FQDN rather than just the hostname.  Sometimes
+    the FDQN fails on osx, so then just return the default hostname'''
+    try:
+        return socket.gethostbyaddr(socket.gethostname())[0]
+    except:
+        return socket.gethostname()
 
+def ishostname(host):
+    hostname = gethostname()
+    if isinstance(host, str):
+        return host in hostname
+    elif isinstance(host, (tuple, list)):
+        return any([h in hostname for h in host])
+    else:
+        raise NotImplementedError('Failed to process: %s'%host)
+    
 
 
 
@@ -85,7 +103,8 @@ def deltatime(start=None):
   # seconds = diff.seconds # limited to 1 second, so lets get fractions
   seconds = diff.days*86400 + diff.seconds + diff.microseconds/float(10**6)
   out = []
-  epocs = [ [3600,'hour'],
+  epocs = [ [86400, 'day'],
+            [3600,'hour'],
             [60,'minute'],
             [1,'second'],
             [0.001,'milisecond'] ]

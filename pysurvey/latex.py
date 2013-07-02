@@ -20,6 +20,57 @@ float_types = [types.FloatType, np.float16, np.float32, np.float64, np.float128]
 
 
 
+# some nice helpers
+
+
+def total(d):
+    '''From the matrix of data values (d) create a row of totals
+    total()
+    '''
+    row = []
+    for i,col in enumerate(zip(*d)):
+        if isinstance(col[0], (int, float)):
+            row.append(np.sum(col))
+        else:
+            row.append('')
+            
+    row[0] = 'Totals:'
+    
+    # print 
+    # import pdb; pdb.set_trace()
+    return row
+
+
+def dash(n):
+    '''A simple formatting function that format defaults to using.  Basically for zero values
+    it puts a dash.'''
+    if n == 0:
+        return '-'
+    
+    if isinstance(n,float):
+        return '%0.2f'%(n)
+    
+    return str(n)
+
+
+def format(d, fcn=None):
+    '''Apply a format function fcn to the values in the data matrix (d)
+    Expects that fcn returns a formatted item in the data matrix. see dash for an example'''
+    if fcn is None:
+        fcn = dash
+    out  = []
+    for row in d:
+        out.append([fcn(t) for t in row])
+    return out
+
+
+def n(array):
+    ''' A simple little binary counter'''
+    return len(np.where(array)[0])
+
+
+
+
 
 
 ''' Sounf from: https://github.com/mirestrepo/voxels-at-lems/blob/master/external/Table.py '''
@@ -254,8 +305,13 @@ class Table(object):
       if type(data) is not types.ListType:
          raise ValueError, "data should be a list"
       if len(data) != self.numcols:
-         raise ValueError, \
-               "Error, length of data must match number of table columns"
+         tmp = zip(*data)
+         if len(tmp) == self.numcols:
+             print 'Rotating table'
+             data = tmp
+         else:
+             raise ValueError, \
+                   "Error, length of data must match number of table columns"
 
       for datum in data:
          if type(datum) not in [types.ListType, types.TupleType, np.ndarray]:
@@ -278,7 +334,11 @@ class Table(object):
       self.data_labels.append(label)
       self.data_label_types.append(labeltype)
       self.data.append(data)
-
+   
+   def add_line(self):
+       self.data.append('\hline \\\\[-2ex]')
+       
+   
    def print_table(self, fp=None):
       we_open = False
       if fp is None:
@@ -326,8 +386,17 @@ class Table(object):
 
    def print_data(self,fp):
       fp.write("\\startdata\n")
-
+      offset = 0
+      
       for i,data in enumerate(self.data):
+         
+         if isinstance(data, str):
+             fp.write('%s\n'%(data))
+             offset += 1
+             continue
+         else:
+             i -= offset
+          
          if self.data_labels[i] != '':
             if self.data_label_types == "cutin":
                fp.write("\\cutinhead{%s}\n" % self.data_labels[i])

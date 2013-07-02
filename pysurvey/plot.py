@@ -48,6 +48,7 @@ class PDF(object):
         '''Makes a nice little pdf'''
         if not os.path.isabs(filename):
             filename = os.path.join(OUTDIR,filename+ext)
+        self.filename = filename
         self.pdf = PdfPages(filename)
         pylab.figure('pdf_fig', **kwargs)
             
@@ -59,16 +60,20 @@ class PDF(object):
         ''' With Constructor is done'''
         self.close()
     
-    def save(self, clear=True):
+    def save(self, clear=True, quiet=False):
         '''Save the current figure as a new page, and ready
         the figure for the next page'''
         self.pdf.savefig()
         if clear:
             pylab.clf()
+        if not quiet:
+            splog('Added Page:',self.filename)
+            
     
     def close(self):
         '''Close out the pdf and any additional final items'''
         self.pdf.close()
+        splog('Finished Figure:',self.filename)
     
 
 
@@ -77,7 +82,7 @@ def legend(handles=None, labels=None,
            reverse=False, **kwargs):
     '''Set a better legend
     zorder=int -- layer ordering
-    box = T/F -- draw the box or not
+    box = T/F -- dra`w the box or not
     
     http://matplotlib.org/users/legend_guide.html
     '''
@@ -117,7 +122,6 @@ def setup(subplt=None,
           subtitle=None, subtitle_prop=None, subtitleloc=1,
           title=None,
           xticks=True, yticks=True, autoticks=False,
-          subplot=None,
           grid=True, tickmarks=True, font=True,
           adjust=True, hspace=0.1, wspace=0.1, aspect=None
           ):
@@ -133,14 +137,15 @@ def setup(subplt=None,
     grid -- Turn on the grid in a nice way
     
     tickmarks -- make me some nick minor and major ticks
+    
+    you can pass in a gridspec
     '''
     
     
     ## Handle subplot being an int `223`, tuple `(2,2,3)` or gridspec 
     if subplt is None:
         ax = pylab.gca()
-    elif (isinstance(subplt, int) or 
-          isinstance(subplt, gridspec.GridSpec) ):
+    elif isinstance(subplt, (int, gridspec.GridSpec, gridspec.SubplotSpec) ):
         ax = pylab.subplot(subplt)
     else:
         ax = pylab.subplot(*subplt)
@@ -495,23 +500,31 @@ def scontour(x,y, levels=None, nbin=20,
 
 
 
-def line(x=None, y=None, **kwargs):
-    '''X,Y Arrays of lines to plot'''
+def line(x=None, y=None, r=None, **kwargs):
+    '''X,Y Arrays of lines to plot, r is the range of the line.'''
     xmin,xmax,ymin,ymax = pylab.axis()
     kwargs.setdefault('color','orange')
     kwargs.setdefault('linestyle','-')
     kwargs.setdefault('linewidth', 2)
     
     if x is not None:
+        if r is None:
+            r = [ymin, ymax]
+        
         if isinstance(x, (float, int)):
             x = [x]
+        
         for a in x:
-            pylab.plot(np.ones(2)*a, [ymin, ymax], **kwargs)
+            pylab.plot(np.ones(2)*a, r, **kwargs)
     if y is not None:
+        if r is None:
+            r = [xmin, xmax]
+        
         if isinstance(y, (float, int)):
             y = [y]
+        
         for a in y:
-            pylab.plot([xmin, xmax], np.ones(2)*a, **kwargs)
+            pylab.plot(r, np.ones(2)*a, **kwargs)
 
 
 
