@@ -55,3 +55,34 @@ def convert2distance(ra, dec, z, center):
     ry = dt*np.radians(dec - center[1])
     rz = cosmolopy.distance.comoving_distance(z, **p)*p['h']
     return rx,ry,rz
+
+
+def redshiftvolume(area, zrange, zbins=100):
+    '''Gets the volume by integrating the area times zbins
+    area is in deg^2 
+    zrange = [zmin, zmax] 
+    zbins = number of redshift bins
+    returns the volume in (Mpc/h)^3
+                 /-------------+
+        /-------               |
+    +--                        |
+    |                          | area
+    +--                        |
+        \-------               |
+                 \-------------+
+    zmin                    zmax
+    '''
+    
+    # setup the variables
+    p = _cosmology()
+    z = np.linspace(zrange[0], zrange[1], zbins)
+    
+    
+    dt = cosmolopy.distance.comoving_distance_transverse(z, **p)*p['h']
+    
+    area = (dt*np.radians(np.sqrt(area)))**2
+    dz = cosmolopy.distance.comoving_distance(z, **p)*p['h']
+    volume = np.sum(area*dz)
+    return volume
+
+

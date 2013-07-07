@@ -110,3 +110,6 @@ def extrap1d(interpolator):
         return scipy.array(map(pointwise, scipy.array(xs)))
 
     return ufunclike
+
+
+

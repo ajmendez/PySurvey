@@ -103,6 +103,9 @@ def legend(handles=None, labels=None,
         
         return legend(handles[::-1], labels[::-1], zorder=zorder, box=box, **kwargs)
     
+    if l is None:
+        return l
+    
     if zorder is not None:
         l.set_zorder(zorder)
     
@@ -203,7 +206,8 @@ def setup(subplt=None,
     
     # Axis hiding
     if autoticks is True:
-        if not (isinstance(subplt, tuple) and len(subplt) == 3):
+        if not ( ( (isinstance(subplt, tuple) and len(subplt) == 3) ) or 
+                 ( (isinstance(subplt, gridspec.SubplotSpec)) ) ):
             splog('Cannot setup auto ticks without a proper subplot')
         else:
             if isinstance(subplt, gridspec.SubplotSpec):
@@ -508,23 +512,20 @@ def line(x=None, y=None, r=None, **kwargs):
     kwargs.setdefault('linewidth', 2)
     
     if x is not None:
-        if r is None:
-            r = [ymin, ymax]
-        
+        yr = [ymin, ymax] if r is None else r
         if isinstance(x, (float, int)):
             x = [x]
         
         for a in x:
-            pylab.plot(np.ones(2)*a, r, **kwargs)
+            pylab.plot(np.ones(2)*a, yr, **kwargs)
+    
     if y is not None:
-        if r is None:
-            r = [xmin, xmax]
-        
+        xr = [xmin, xmax] if r is None else r
         if isinstance(y, (float, int)):
             y = [y]
         
         for a in y:
-            pylab.plot(r, np.ones(2)*a, **kwargs)
+            pylab.plot(xr, np.ones(2)*a, **kwargs)
 
 
 
