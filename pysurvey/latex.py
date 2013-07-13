@@ -304,6 +304,11 @@ class Table(object):
 
       if type(data) is not types.ListType:
          raise ValueError, "data should be a list"
+      
+      #by default rotate unless it does not work
+      tmp = zip(*data)
+      data = tmp
+      
       if len(data) != self.numcols:
          tmp = zip(*data)
          if len(tmp) == self.numcols:

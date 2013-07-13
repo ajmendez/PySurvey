@@ -74,7 +74,7 @@ def multi_process(fcn, args, n=None):
     try:
         # This is the timeout to wait for the results.  We default to something
         # really really large.
-        results = p.get(0xFFFFF)
+        results = p.get(0xFFFFFFF)
     except KeyboardInterrupt:
         # This captures the error raised by do_work and raises a different error
         # so that the computation finally ends and we do not attempt to run

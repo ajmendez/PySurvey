@@ -7,6 +7,8 @@ import copy
 
 # Installed Libraries
 import pylab
+import pywcs
+import pywcsgrid2
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.gridspec as gridspec
@@ -16,6 +18,7 @@ import mpl_toolkits.axes_grid1 as axes_grid1
 from util import splog, embiggen, minmax
 from file import nicefile
 from math import blur_image
+from oldmangle import Mangle
 
 OUTDIR = nicefile('$PYSURVEY_FIGURE')
 
@@ -534,11 +537,140 @@ def line(x=None, y=None, r=None, **kwargs):
 
 
 ### sky plots
-def sky(ra, dec, **kwargs):
-    ''' Basemap setup'''
+def setup_sky(header, subplt=111, delta=100, **kwargs):
+    '''Setup a nice sky plot that handles images'''
+    ax = pywcsgrid2.subplot(subplt, header=header)
+    fig = pylab.gcf()
+    fig.add_axes(ax)
+    ax.set_display_coord_system('fk5')
+    ax.set_ticklabel_type('absdeg', 'absdeg')
+    ax.set_aspect('equal')
+    ax.locator_params(axis='x', nbins=4)
+    ax.grid()
+    ax.set_xlim(-delta,delta+header['naxis1'])
+    ax.set_ylim(-delta,delta+header['naxis2'])
+    return ax
+    
+def skypoly(window, **kwargs):
+    from matplotlib.patches import Polygon
+    from matplotlib.collections import PolyCollection, PatchCollection
+    
+    cmap = kwargs.pop('cmap',None)
+    if cmap is None:
+        cmap = copy.copy(pylab.cm.gray_r)
+        cmap.set_bad('r',1.0)
+    
+    try:
+        ax = pylab.gca()['fk5']
+    except Exception as e:
+        print e
+        ax = pylab.gca()
+    
+    p,w = window.graphics()
+    
+    patches = []
+    for i,poly in enumerate(p):
+        ra,dec = poly['ra'], poly['dec']
+        patches.append(Polygon(zip(ra,dec)) )
+    
+    tmp = {'cmap':cmap,
+           'rasterized': True,
+           'edgecolors':'none'}
+    tmp.update(kwargs)
+    
+    p = PatchCollection(patches, **tmp)
+    # p.set_array(w)
+    ax.add_collection(p)
+    ax.set_aspect('equal')
+    ax.set_rasterization_zorder(0)
+    return p
+
+
+
+def skywindow(window, header=None, **kwargs):
+    '''Plot a window function'''
+    cmap = kwargs.pop('cmap',None)
+    if cmap is None:
+        cmap = copy.copy(pylab.cm.gray_r)
+        cmap.set_bad('r',1.0)
+    
+    ax = pylab.gca()
+        
+    vmin, vmax = minmax(window)
+    if vmin == vmax:
+        vmax += 1
+    tmp = {'vmin':vmin, 'vmax':vmax, 
+           'origin':'low',
+           'cmap':cmap}
+    tmp.update(kwargs)
+    
+    if header is None:
+        im = ax.imshow(window, **tmp)
+    else:
+        im = ax[header].imshow_affine(window, **tmp)
+    return im
+    
+
+        
     
     
 
+def sky(ra, dec, **kwargs):
+    ''' Basemap setup'''
+    tmp = {'marker':',', 
+           'c':'k',
+           's':0.5,
+           #  'edgecolors':'none',
+           'rasterized':True,
+           'alpha':0.5}
+    tmp.update(kwargs)
+    
+    ax = pylab.gca()
+    ax['fk5'].scatter(ra,dec, **tmp)
+    
+
+
+def skyheader(ra, dec):
+    dra,ddec = ra[1]-ra[0], dec[1]-dec[0]
+    dummy = pywcs.WCS(naxis=2)
+    dummy.wcs.crpix = [500, 500]  # pixel position
+    dummy.wcs.crval = [np.mean(ra), np.mean(dec)]   # RA, Dec (degrees)
+    dummy.wcs.ctype = ["RA---CAR", "DEC--CAR"]
+    dummy.wcs.cdelt = np.array([-dra, ddec])  / 1000.0
+
+    header = dummy.to_header()
+    header.update('NAXIS1',1000)
+    header.update('NAXIS2',1000)
+    header.update('EQUINOX', 2000.0)
+    del header['WCSAXES']
+    del header['RESTFRQ']
+    del header['RESTWAV']
+    del header['LONPOLE']
+    del header['LATPOLE']
+    
+    return header
+
+def _sky2():
+    pass
+    # import pylab
+    # from kapteyn import maputils
+    # from matplotlib import pyplot as plt
+    # fitsobj = maputils.FITSimage('/Users/ajmendez/research/data/fields/egs/polygons/windowf.41.fits.gz')
+    # ax =  pylab.subplot(111)
+    # baseim = fitsobj.Annotatedimage(ax)
+    # baseim.Image()
+    # graticule1 = baseim.Graticule()
+    # 
+    # Secondfits = maputils.FITSimage('/Users/ajmendez/research/data/fields/egs/polygons/windowf.42.fits.gz')
+    # pars = dict(cval=0.0, order=1)
+    # Reprojfits = Secondfits.reproject_to(fitsobj, interpol_dict=pars)
+    # overlayim = fitsobj.Annotatedimage(ax, boxdat=Reprojfits.boxdat)
+    # overlayim.Image(alpha=0.0)
+    # baseim.plot()
+    # overlayim.plot()
+    # baseim.interact_toolbarinfo()
+    # baseim.interact_imagecolors()
+    # plt.show()
 
 
 

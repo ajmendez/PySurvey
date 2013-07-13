@@ -32,3 +32,5 @@ Lists look like this:
 
 * util -- A nice set of utilities like spherematch and match
 
+
+* pip install http://www.astro.rug.nl/software/kapteyn/kapteyn-2.2.tar.gz
