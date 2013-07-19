@@ -7,12 +7,12 @@ import copy
 
 # Installed Libraries
 import pylab
-import pywcs
-import pywcsgrid2
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.gridspec as gridspec
 import mpl_toolkits.axes_grid1 as axes_grid1
+import matplotlib.ticker
+
 
 # Package Imports
 from util import splog, embiggen, minmax
@@ -124,6 +124,8 @@ def setup(subplt=None,
           xr=None, yr=None,
           xlog=False, ylog=False,
           xlabel=None, ylabel=None, 
+          xtickv=None, xticknames=None, halfxlog=False,
+          ytickv=None, yticknames=None,
           suptitle=None, suptitle_prop=None, 
           subtitle=None, subtitle_prop=None, subtitleloc=1,
           title=None,
@@ -205,7 +207,17 @@ def setup(subplt=None,
         pylab.text(loc[0], loc[1], subtitle, **prop)
     
     
-    
+    if xtickv is not None:
+        ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(xtickv))
+        if xticknames is not None:
+            ax.xaxis.set_major_formatter(matplotlib.ticker.FixedFormatter(xticknames))
+        
+    if ytickv is not None:
+        ax.yaxis.set_major_locator(matplotlib.ticker.FixedLocator(ytickv))
+        if yticknames is not None:
+            ax.yaxis.set_major_formatter(matplotlib.ticker.FixedFormatter(yticknames))
+        
+        
     
     # Axis hiding
     if autoticks is True:
@@ -225,6 +237,8 @@ def setup(subplt=None,
                 xticks = False
     
     
+    
+    
     # Tickmark hiding -- used by autoticks as well.
     if xticks is False:
         # ax.set_xticklabels([])
@@ -235,7 +249,6 @@ def setup(subplt=None,
         # ax.set_yticklabels([])
         ax.set_ylabel('')
         pylab.setp(ax.get_yticklabels(), visible=False)
-    
     
     
     # some nice defaults
@@ -262,6 +275,19 @@ def setup(subplt=None,
     if aspect is not None:
         # 'auto', 'equal'
         ax.set_aspect(aspect)
+    
+    
+    if (xticks) and (halfxlog):
+        xax = ax.xaxis
+        xax.set_minor_formatter(matplotlib.ticker.FormatStrFormatter('%g'))
+        
+        tmp = (10.0**(np.arange(-1,5,1)))*5.0
+        for x,label in zip(xax.get_minorticklocs(), xax.get_minorticklabels()):
+            if x in tmp:
+                label.set_fontsize(8)
+            else:
+                label.set_fontsize(0)
+                pylab.setp(label, visible=False)
     
     
     # temp
@@ -539,6 +565,7 @@ def line(x=None, y=None, r=None, **kwargs):
 ### sky plots
 def setup_sky(header, subplt=111, delta=100, **kwargs):
     '''Setup a nice sky plot that handles images'''
+    import pywcsgrid2 # slow as shit
     ax = pywcsgrid2.subplot(subplt, header=header)
     fig = pylab.gcf()
     fig.add_axes(ax)
@@ -631,6 +658,7 @@ def sky(ra, dec, **kwargs):
 
 
 def skyheader(ra, dec):
+    import pywcs # meh slow?
     dra,ddec = ra[1]-ra[0], dec[1]-dec[0]
     dummy = pywcs.WCS(naxis=2)
     dummy.wcs.crpix = [500, 500]  # pixel position

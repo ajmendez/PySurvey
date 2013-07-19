@@ -3,7 +3,7 @@
 
 # [Installed]
 import numpy as np
-import pywcsgrid2
+
 import cosmolopy
 
 # [Package]
@@ -24,7 +24,7 @@ def _cosmology():
 
 def radec2xy(header, ra, dec):
     '''From a header, and radec position, return the x,y position relative to an image'''
-    
+    import pywcsgrid2 # slow so leave it here.
     t = pywcsgrid2.wcs_transforms.WcsSky2PixelTransform(header)
     ll = np.vstack((ra,dec)).T    
     xy = t.transform(ll)
@@ -38,7 +38,7 @@ def xy2radec(header, xx, yy=None):
         xy = xx
     else:
         xy = np.vstack((xx,yy)).T
-    
+    import pywcsgrid2 # slow so leave it here
     t = pywcsgrid2.wcs_transforms.WcsPixel2SkyTransform(header)
     radec = t.transform(xy)
     return radec[:,0], radec[:,1]

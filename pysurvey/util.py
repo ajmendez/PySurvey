@@ -249,9 +249,12 @@ def splog(*args, **kwargs):
     color='blue' -- by setting this keyword, it attempts to load one of the 
                     color function from the clint.textui.colored package
                     ('red', 'green', 'yellow', 'blue', 'black', 'magenta', 'cyan')
+    name = defined name to use rather than determine it from the stack
+    stack=1 -- go up the stack some number of values
     
     getstr=True -- return the string without printing to stdout
-    stack=1 -- go up the stack some number of values
+    
+    
     if the first letter of the first argument is one of ('\n','\t','!') it will be 
     prepended before the line. The '!' adds a nice red exclamation point for somewhat
     important debugs that can be found.
@@ -265,15 +268,19 @@ def splog(*args, **kwargs):
     #              'yellow':colored.red}
     # f = colordict.get(kwargs.get('color','blue'), colored.blue)
     f = getattr(colored, kwargs.get('color','blue'), colored.blue)
-        
+    
+    
+    
     s = inspect.stack()
     try:
-        module = inspect.getmodule(s[1][0]).__name__
+        i = kwargs.pop('stack',1)
+        module = inspect.getmodule(s[i][0]).__name__
+        # import pdb; pdb.set_trace()
     except AttributeError:
         module = '__main__'
     
     module = '<main>' if module == '__main__' else module
-    name = s[1+kwargs.get('stack',0)][3]
+    name = kwargs.pop('name', s[1+kwargs.get('stack',0)][3])
     prefix = ' '*(len(s)-2)
     
     # attempt to prefix the entire line with a specific keyword set
