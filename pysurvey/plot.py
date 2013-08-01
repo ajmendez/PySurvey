@@ -15,18 +15,54 @@ import matplotlib.ticker
 
 
 # Package Imports
-from util import splog, embiggen, minmax
-from file import nicefile
-from math import blur_image
-from oldmangle import Mangle
+from pysurvey import util, file, math, oldmangle
+# from util import splog, embiggen, minmax, getargs
+# from file import nicefile
+# from math import blur_image
+# from oldmangle import Mangle
 
-OUTDIR = nicefile('$PYSURVEY_FIGURE')
+OUTDIR = file.nicefile('$PYSURVEY_FIGURE')
 
 
-def saveplot(filename, clear=True, ext=None):
+def quick(*args, **kwargs):
+    '''A simple plot to make things quick. 
+    separates out the setup arguments so you can do things like 
+    xr=[2,3] and the sort'''
+    tmp, kwargs2 = util.getargs(setup, **kwargs)
+    tmp2 = { 'marker':',', 'alpha':0.5 }
+    tmp2.update(kwargs2)
+    
+    pylab.clf()
+    setup(**tmp)
+    pylab.plot(*args, **tmp2)
+    pylab.show()
+
+def hist(*args, **kwargs):
+    '''simple little histogram that can be run from python bare.
+    TODO: add in delta=[xmin,xmax,dx] to do a different style of binning.'''
+    delta = kwargs.pop('delta', None)
+    if delta is not None:
+        kwargs['bins'] = np.arange(*delta)
+        
+    tmp, kwargs2 = util.getargs(setup, **kwargs)
+    tmp2 = {'alpha':0.8}
+    tmp2.update(kwargs2)
+    
+    pylab.clf()
+    setup(**tmp)
+    pylab.hist(*args, **tmp2)
+    pylab.show()
+
+
+
+
+def saveplot(filename, clear=True, ext=None, nice=False):
     '''Save the current figure to a specific filename.  If the
     filename is not an absolute path it uses the $PYSURVEY_FIGURE
     directory'''
+    if nice:
+        filename = nicefile(filename)
+    
     if ext is None:
         tmp = os.path.splitext(filename)
         if len(tmp[1]) == 0:
@@ -40,7 +76,7 @@ def saveplot(filename, clear=True, ext=None):
     
     
     pylab.savefig(filename, dpi=150)
-    splog('Saved Figure:', filename)
+    util.splog('Saved Figure:', filename)
     if clear:
         pylab.clf()
 
@@ -70,13 +106,13 @@ class PDF(object):
         if clear:
             pylab.clf()
         if not quiet:
-            splog('Added Page:',self.filename)
+            util.splog('Added Page:',self.filename)
             
     
     def close(self):
         '''Close out the pdf and any additional final items'''
         self.pdf.close()
-        splog('Finished Figure:',self.filename)
+        util.splog('Finished Figure:',self.filename)
     
 
 
@@ -131,7 +167,8 @@ def setup(subplt=None,
           title=None,
           xticks=True, yticks=True, autoticks=False,
           grid=True, tickmarks=True, font=True,
-          adjust=True, hspace=0.1, wspace=0.1, aspect=None
+          adjust=True, hspace=0.1, wspace=0.1, aspect=None,
+          rasterized=False,
           ):
     '''Setup some nice defaults so that we are all fancy like
     
@@ -289,7 +326,8 @@ def setup(subplt=None,
                 label.set_fontsize(0)
                 pylab.setp(label, visible=False)
     
-    
+    if rasterized:
+        ax.set_rasterized(True)
     # temp
     return ax
 
@@ -310,13 +348,13 @@ def setup(subplt=None,
 def _getextent(extent, X,Y):
     '''Return the extent :: extent = (xmin, xmax, ymin, ymax) '''
     if extent is None:
-        extent = minmax(X,nan=False) + minmax(Y, nan=False)
+        extent = math.minmax(X, nan=False) + math.minmax(Y, nan=False)
     return extent
     
 def _getvrange(vrange, Z, p=0.05):
     '''Return the vertical / value range'''
     if vrange is None:
-        vrange = embiggen(minmax(Z, nan=False), p, mode='upper')
+        vrange = math.embiggen(math.minmax(Z, nan=False), p, mode='upper')
     return vrange
 
 def _getcmap(cmap):
@@ -400,7 +438,7 @@ def _smooth(X,Y,Z, smoothlen):
         X, Y = np.meshgrid(X,Y)
     out = []
     for A in (Z, ):
-        out.append(blur_image(A, smoothlen))
+        out.append(math.blur_image(A, smoothlen))
     # print len(X), len(Z), len(out[0])
     # return out
     return X,Y, out[0]
@@ -440,7 +478,7 @@ def contour(X,Y,Z,
 
 def _crange(xmin, xmax, nbin):
     if xmin > xmax: xmin, xmax = xmax, xmin
-    xmin, xmax = embiggen([xmin,xmax], 0.1)
+    xmin, xmax = math.embiggen([xmin,xmax], 0.1)
     bins = np.linspace(xmin, xmax, nbin+1)
     delta = (bins[1] - bins[0])/2.0
     return bins,delta
@@ -623,7 +661,7 @@ def skywindow(window, header=None, **kwargs):
     
     ax = pylab.gca()
         
-    vmin, vmax = minmax(window)
+    vmin, vmax = math.minmax(window)
     if vmin == vmax:
         vmax += 1
     tmp = {'vmin':vmin, 'vmax':vmax, 

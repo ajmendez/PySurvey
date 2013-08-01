@@ -25,12 +25,13 @@ float_types = [types.FloatType, np.float16, np.float32, np.float64, np.float128]
 
 def total(d):
     '''From the matrix of data values (d) create a row of totals
-    total()
+    total() if is a string then does not add it
     '''
     row = []
     for i,col in enumerate(zip(*d)):
         if isinstance(col[0], (int, float)):
-            row.append(np.sum(col))
+            c = [t if isinstance(t,(int,float)) else 0 for t in col if isinstance(t,(int,float))]
+            row.append(np.sum(c))
         else:
             row.append('')
             
@@ -230,7 +231,8 @@ class Table(object):
         a table instance, add columns, set options, then call the print method.'''
         
    def __init__(self, numcols, justs=None, fontsize=None, rotate=False, 
-         tablewidth=None, tablenum=None, caption=None, label=None):
+         tablewidth=None, tablenum=None, 
+         caption=None, label=None):
 
       self.numcols = numcols
       self.justs = justs
@@ -260,7 +262,30 @@ class Table(object):
       self.data_label_types = []
       self.sigfigs = []
       self.nrows = []
+      
+      self.footnote_ids = list('abcdef')# can add more if needed
+      self.footnotes = []
 
+   def add_footnote(self, item):
+      '''Breaks off the \note{} part of a foot note and then returns the item
+      and appends the foot not to the footnotes'''
+      addnote = True
+      clean,note = item.split(r'\note') # note will still be wrapped with {}
+      _, footid, note = re.match(r'(\{(\w)\})?([\w\W]*)', note).groups()
+      if footid is None:
+         footid = self.footnote_ids.pop(0)
+      else:
+         if footid in self.footnote_ids:
+            self.footnote_ids.remove(footid)
+         else:
+            # already added 
+            addnote = False
+            
+      if addnote:
+         self.footnotes.append(r'\tablenotetext{%s}%s'%(footid,note))
+      return  clean + r'\tablenotemark{%s}'%(footid)
+      
+      
    def add_header_row(self, headers, cols=None):
       '''Add a header row to the table.  [headers] should be a list of the
       strings that will be in the header.  [cols], if specified, should be a 
@@ -268,6 +293,12 @@ class Table(object):
       are in order and there are no multicolumns.  If cols is specified, you
       can indicate the the ith header spans several columns by setting the
       ith value of cols to a 2-tuple of first and last columns for the span.'''
+      
+      for header in headers:
+         if r'\note' in header:
+            i = headers.index(header)
+            headers[i] = self.add_footnote(header)
+      
       
       if cols is None:
          if len(headers) != self.numcols:
@@ -280,14 +311,18 @@ class Table(object):
          for item in cols:
             if type(item) is types.IntType:
                ids.append(item)
-            elif type(item) is types.TupleType:
+            elif type(item) is types.TupleType or type(item) is types.ListType:
                ids += range(item[0],item[1]+1)
-
-         ids.sort
+        
+         ids.sort()
          if ids != range(self.numcols):
             raise ValueError, "Error, missing columns in cols"
          self.headers.append(headers)
          self.header_ids.append(cols)
+      
+              
+              
+      
       return
    
    def add_data(self, data, label="", sigfigs=2, labeltype='cutin'):
@@ -317,13 +352,22 @@ class Table(object):
          else:
              raise ValueError, \
                    "Error, length of data must match number of table columns"
-
+      
       for datum in data:
          if type(datum) not in [types.ListType, types.TupleType, np.ndarray]:
             raise ValueError, "data must be list of lists and numpy arrays"
          if len(np.shape(datum)) not in [1,2]:
             raise ValueError, "data items must be 1D or 2D"
-
+      
+      # grab footers
+      data = np.array(data)
+      for i in range(len(data)):
+         for j in range(len(data[i])):
+            if isinstance(data[i][j],str) and r'\note' in data[i][j]:
+               data[i][j] = self.add_footnote(data[i][j])
+      
+      
+      
       nrows = np.shape(data[0])[0]
       for datum in data[1:]:
          if np.shape(datum)[0] != nrows:
@@ -340,8 +384,12 @@ class Table(object):
       self.data_label_types.append(labeltype)
       self.data.append(data)
    
-   def add_line(self):
-       self.data.append('\hline \\\\[-2ex]')
+   def add_line(self, spacing=-2, prespacing=None):
+      line = ''
+      if prespacing is not None:
+         line += '[{:d}ex]'.format(prespacing)
+      line += '\hline \\\\[{:d}ex]'.format(spacing)
+      self.data.append(line)
        
    
    def print_table(self, fp=None):
@@ -361,6 +409,7 @@ class Table(object):
 
    def print_preamble(self, fp):
       cols = "".join(self.justs)
+      fp.write("%!TEX root = ../ms.tex\n")
       fp.write("\\begin{deluxetable}{%s}\n" % cols)
       if self.fontsize: fp.write("\\tabletypesize{%s}\n" % str(self.fontsize))
       if self.rotate: fp.write("\\rotate\n")
@@ -381,6 +430,9 @@ class Table(object):
       for i,headers in enumerate(self.headers):
          end = ['\\\\\n',''][i == len(self.headers)-1]
          for j,header in enumerate(headers):
+            if r'\\' in header: 
+               header = r'\makecell[c]{%s}'%(header)
+             
             sep = [end,'&'][j < len(headers)-1]
             if len(np.shape(self.header_ids[i][j])) == 1:
                length = self.header_ids[i][j][1] - self.header_ids[i][j][0] + 1
@@ -437,5 +489,7 @@ class Table(object):
       fp.write("\\enddata\n")
 
    def print_footer(self, fp):
+      for footnote in self.footnotes:
+         fp.write('%s\n' % footnote)
       fp.write("\\end{deluxetable}\n")
                      

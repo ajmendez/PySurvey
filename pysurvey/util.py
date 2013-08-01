@@ -3,13 +3,13 @@
 
 # System Libraries
 import os
+import sys
 import socket
 import datetime
 import inspect
 import collections
 
 # Installed Libraries
-import numpy as np
 from clint.textui import colored, puts
 
 # Package Imports
@@ -41,42 +41,16 @@ def ishostname(host):
     
 
 
-
-
-def minmax(x, nan=True):
-    '''Returns both the minimum and maximum'''
-    if nan:
-        return np.min(x), np.max(x)
+def settitle(name):
+    '''Set the window title by hit or miss'''
+    if os.name == 'posix':
+        sys.stdout.write("\x1b]2;{}\x07".format(name))
     else:
-        return np.nanmin(x), np.nanmax(x)
+        ### Windows: -- might be too much of an assumption
+        # platform.system() might be better to determine
+        os.system("title {}".format(name))
 
-def embiggen(r, p=0.05, mode='both'):
-    '''Returns a larger range from an input range (r) and percentage p.
-    p=[0.05]  -- 5 percent increase in size
-    mode=['both'] -- increase both sides of the range ('both','upper','lower')
-    '''
-    xmin, xmax = r
-    sign = 1.0
-    if xmin > xmax:
-        sign = -1.0
-    delta = abs(xmax-xmin)
-    d = delta*p*sign
-    if mode == 'both':
-        return xmin-d, xmax+d
-    elif mode == 'upper':
-        return xmin, xmax+d
-    elif mode == 'lower':
-        return xmin-d, xmax
 
-def match(X,Y):
-    '''(unoptimized) -- Returns the matched index so that:
-        ii,jj = match(X,Y)
-        X[ii] == Y[jj]
-    
-    '''
-    ii = np.in1d(X, Y).nonzero()[0]
-    jj = [np.where(Y == x)[0][0] for x in X[ii]]
-    return ii, jj
 
 
 
@@ -150,6 +124,7 @@ uniq = uniqify # to make it similar to IDL -- yeah, I know...
 
 def uniq_dict(x, **kwargs):
     '''Get a nice dictionary which we can loop over'''
+    import numpy as np
     toscreen = kwargs.pop('print',False)
     u = uniq(x, **kwargs)
     out = {}
@@ -283,6 +258,12 @@ def splog(*args, **kwargs):
     name = kwargs.pop('name', s[1+kwargs.get('stack',0)][3])
     prefix = ' '*(len(s)-2)
     
+    if (len(prefix) > 11) and SPLOG['multi']:
+        # There are a bunch of indirection levels that are not
+        # that important for multi process things, so drop them out
+        # of the heiarchy.
+        prefix = prefix[11:]
+    
     # attempt to prefix the entire line with a specific keyword set
     try:
         if (len(args) > 0) and ( args[0].startswith('\n') or 
@@ -297,8 +278,10 @@ def splog(*args, **kwargs):
     
     if SPLOG['multi']:
         try:
-            while len(prefix) > 10:
-                prefix = '>' + prefix.split()[0] + prefix[10:]
+            if len(prefix) > 10:
+                prefix = prefix[:10]
+            # while len(prefix) > 10:
+            #     prefix = '>' + prefix.split()[0] + prefix[10:]
         except:
             pass
         prefix = '%s>'%(os.getpid())+prefix

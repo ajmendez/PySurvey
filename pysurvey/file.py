@@ -52,9 +52,9 @@ def join(a, b):
     tmp = pyfits.new_table(a.columns, nrows=len(a)+len(b) )
     for column in b.columns:
         if column.dim is not None:
-            if 'A' in column.format:
-                raise NotImplementedError('This does not work on char arrays')
-            tmp.data[column.name][len(a):, :] = column.array
+            # s = tmp.data[column.name][len(a):, :].shape
+            # tmp.data[column.name][len(a):, :] = np.reshape(column.array,s)
+            tmp.data[column.name][len(a):, :] = b[column.name]
         else:
             tmp.data[column.name][len(a):] = column.array
     return fromHDU(None, tmp)

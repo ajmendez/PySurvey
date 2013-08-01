@@ -34,3 +34,5 @@ Lists look like this:
 
 
 * pip install http://www.astro.rug.nl/software/kapteyn/kapteyn-2.2.tar.gz
+* pip install pywcs
+* github install of pyfits

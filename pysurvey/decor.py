@@ -1,6 +1,6 @@
 # some nice decorations
 from functools import wraps
-from pysurvey import deltatime, splog, getargs
+from pysurvey import util
 
 
 def timeit(fcn):
@@ -8,11 +8,20 @@ def timeit(fcn):
     
     @wraps(fcn)
     def wrapper(*args, **kwargs):
-        start = deltatime()
+        # get a nice list of arguments -- defaults to nothing if none
+        name = fcn.func_name
+        tmp = ', '.join(map(str, args))
+        if len(tmp) > 0: tmp = '[{}]'.format(tmp)
+        # Arguments for splog making things look all nice.
+        kw = {'color':'green', 'name':name, 'stack':2}
+        
+        start = util.deltatime()
+        util.splog('Starting:', name, tmp, **kw)
         results = fcn(*args, **kwargs)
-        splog('Finished running:', str(args), deltatime(start), 
-              color='green', name=fcn.func_name, stack=2)
+        util.splog('Finished running:',tmp, util.deltatime(start), **kw)
+        
         return results 
+        
     return wrapper
 
 
@@ -21,7 +30,7 @@ def filterkeys(fcn):
     is fcn is well defined (not using kwargs then it will attempt to just take the right bits from kwargs)'''
     @wraps(fcn)
     def wrapper(*args, **kwargs):
-        out, tmp = getargs(fcn, **kwargs)
+        out, tmp = util.getargs(fcn, **kwargs)
         return fcn(*args, **out)
     
     return wrapper

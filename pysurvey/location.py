@@ -3,7 +3,7 @@
 
 # [Installed]
 import numpy as np
-
+import pywcs
 import cosmolopy
 
 # [Package]
@@ -24,24 +24,35 @@ def _cosmology():
 
 def radec2xy(header, ra, dec):
     '''From a header, and radec position, return the x,y position relative to an image'''
-    import pywcsgrid2 # slow so leave it here.
-    t = pywcsgrid2.wcs_transforms.WcsSky2PixelTransform(header)
-    ll = np.vstack((ra,dec)).T    
-    xy = t.transform(ll)
-    return xy[:,0], xy[:,1]
-
+    wcs = pywcs.WCS(header)
+    x, y = wcs.wcs_sky2pix(ra,dec,0)
+    return x,y
+    # try:
+    #     import pywcsgrid2 # slow so leave it here.
+    #     t = pywcsgrid2.wcs_transforms.WcsSky2PixelTransform(header)
+    #     ll = np.vstack((ra,dec)).T    
+    #     xy = t.transform(ll)
+    #     return xy[:,0], xy[:,1]
+    # except 
 
 def xy2radec(header, xx, yy=None):
     '''Returns (ra, dec) for a set of x and y values that match a wcs header.
     you can pass in xy = np.zeros((n,2)) array as xx and leave yy as None'''
+    wcs = pywcs.WCS(header)
     if yy is None:
-        xy = xx
+        radec = wcs.wcs_pix2sky(xx,0)
+        return radec[:,0], radec[:,1]
     else:
-        xy = np.vstack((xx,yy)).T
-    import pywcsgrid2 # slow so leave it here
-    t = pywcsgrid2.wcs_transforms.WcsPixel2SkyTransform(header)
-    radec = t.transform(xy)
-    return radec[:,0], radec[:,1]
+        return wcs.wcs_pix2sky(xx,yy,0)
+    
+    # if yy is None:
+    #     xy = xx
+    # else:
+    #     xy = np.vstack((xx,yy)).T
+    # import pywcsgrid2 # slow so leave it here
+    # t = pywcsgrid2.wcs_transforms.WcsPixel2SkyTransform(header)
+    # radec = t.transform(xy)
+    # return radec[:,0], radec[:,1]
 
 
 

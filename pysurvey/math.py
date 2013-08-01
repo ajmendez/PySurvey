@@ -3,7 +3,6 @@
 # [System]
 
 # [Installed]
-import pylab
 import numpy as np
 import scipy
 import scipy.signal
@@ -13,6 +12,66 @@ from scipy.interpolate import interp1d
 # [Package]
 
 # [Constants]
+
+
+def uniq_dict(x, **kwargs):
+    '''Get a nice dictionary which we can loop over'''
+    toscreen = kwargs.pop('print',False)
+    u = uniq(x, **kwargs)
+    out = {}
+    for item in u:
+        n = len(np.where(x == item)[0])
+        if toscreen:
+            splog('{:>10d} : {!r}'.format(n, item))
+        out[item] = n
+    return out
+
+
+def print_uniq(x, **kwargs):
+    '''print the unit elements with number of total elements'''
+    kwargs.setdefault('print',True)
+    uniq_dict(x, **kwargs)
+
+
+
+
+
+def minmax(x, nan=True):
+    '''Returns both the minimum and maximum'''
+    if nan:
+        return np.min(x), np.max(x)
+    else:
+        return np.nanmin(x), np.nanmax(x)
+
+def embiggen(r, p=0.05, mode='both'):
+    '''Returns a larger range from an input range (r) and percentage p.
+    p=[0.05]  -- 5 percent increase in size
+    mode=['both'] -- increase both sides of the range ('both','upper','lower')
+    '''
+    xmin, xmax = r
+    sign = 1.0
+    if xmin > xmax:
+        sign = -1.0
+    delta = abs(xmax-xmin)
+    d = delta*p*sign
+    if mode == 'both':
+        return xmin-d, xmax+d
+    elif mode == 'upper':
+        return xmin, xmax+d
+    elif mode == 'lower':
+        return xmin-d, xmax
+
+def match(X,Y):
+    '''(unoptimized) -- Returns the matched index so that:
+        ii,jj = match(X,Y)
+        X[ii] == Y[jj]
+    
+    '''
+    ii = np.in1d(X, Y).nonzero()[0]
+    jj = [np.where(Y == x)[0][0] for x in X[ii]]
+    return ii, jj
+
+
 
 
 #http://www.scipy.org/Cookbook/SignalSmooth?action=AttachFile&do=get&target=cookb_signalsmooth.py
