@@ -28,7 +28,7 @@ def nicefile(filename):
 
 
 def _namefmt(a,b,c,d, sep='| '):
-    return ' {1:<20}{0}{2:<10}{0}{3:<20}{0}{4:<10}'.format(sep,a,b,c,d)
+    return ' {1:<20}{0}{2:<12}{0}{3:<20}{0}{4:<10}'.format(sep,a,b,c,d)
     
 def _arrayfmt(data):
     return ['%s, ...'%(x[0]) if isinstance(x,np.ndarray) else '%s'%(x) for x in data]
@@ -87,9 +87,11 @@ class Cat(object):
     def __str__(self):
         '''Returns a nicely formatted string for the Cat'''
         tmp = [_namefmt('Tag','Format','Example','Unit')]
-        tmp += [_namefmt('-'*20,'-'*10,'-'*20,'-'*10,sep='+-')]
+        tmp += [_namefmt('-'*20,'-'*12,'-'*20,'-'*10,sep='+-')]
+        f = [a+b for a,b in zip(self.columns.formats, self.columns.dims)]
         tmp.extend([_namefmt(*x) for x in zip(self.columns.names, 
-                                            self.columns.formats,
+                                            # self.columns.formats,
+                                            f,
                                             _arrayfmt(self.data[0]),
                                             self.data.columns.units)])
         return "%s.%s [%s]: %s \n%s"%(self.__class__.__module__,

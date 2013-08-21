@@ -60,7 +60,11 @@ class Bins(object):
         return ', '.join(['% .2f'%t for t in self.array])
     
     
-    
+    def __getitem__(self,items):
+        '''Get the centers by default -- this might break things!!!!!!'''
+        # print items
+        # print self.log, self.centers
+        return self.centers[items]
     
     
     @classmethod
@@ -74,7 +78,7 @@ class Bins(object):
             xmin = np.array([xmin])
         xmax = np.floor((array[-1]-array[0])/dx + 1.0)*dx + array[0]
         # There was somthing fucked up without rounding, fuck.
-        return Bin(name, xmin.round(3),xmax.round(3),dx.round(3), log)
+        return Bins(name, xmin.round(3),xmax.round(3),dx.round(3), log)
     
     @classmethod
     def fromdata(self, item, log=None, xmin=None):

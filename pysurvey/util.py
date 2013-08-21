@@ -20,6 +20,38 @@ SPLOG = {'multi':False, # multiprocessing setup
          'outfile':None, # save to disk
         }
 
+class stop(Exception):
+    pass
+
+def setup_stop():
+    '''Give a nice user hook
+    or use 
+    import pdb; pdb.set_trace()
+    import ipdb; ipdb.set_trace()
+    from IPython import embed; embed() 
+    
+    '''
+    import numpy as np
+    np.set_printoptions(precision=3, suppress=True)
+    import ipdb
+    import traceback
+    
+    def excepthook(ec, ei, tb):
+        '''the Exception Hook'''
+        traceback.print_exception(ec, ei, tb)
+        
+        
+        # splog('Variables', color='red', stack=-1)
+        # for item,value in vars().items():
+        #     v = '{}'.format(value)
+        #     if 'module' not in v:
+        #         splog('{}: {}'.format(item, v), color='red', stack=-1)
+        ipdb.pm()
+    
+    sys.excepthook = excepthook
+
+
+
 
 def gethostname():
     '''Get the hostname of the current machine.  This is a wrapper around socket.gethostname
@@ -96,7 +128,7 @@ def deltatime(start=None):
 
 
 
-def uniqify(x, idfun=None, order=False):
+def uniqify(x, idfun=None, order=False, sort=True):
     ''' Uniqify a list :: http://www.peterbe.com/plog/uniqifiers-benchmark
     
     idfun=None    -- pass in a function with returns a sorting key for each element of x
@@ -105,8 +137,8 @@ def uniqify(x, idfun=None, order=False):
     if order:
         # return list(Set(seq))
         if sort:
-            return sorted({}.fromkeys(seq).keys())
-        return {}.fromkeys(seq).keys()
+            return sorted({}.fromkeys(x).keys())
+        return {}.fromkeys(x).keys()
     else:  # order preserving
        if idfun is None:
            idfun = lambda x: x

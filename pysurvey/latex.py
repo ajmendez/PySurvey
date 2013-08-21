@@ -271,6 +271,8 @@ class Table(object):
       and appends the foot not to the footnotes'''
       addnote = True
       clean,note = item.split(r'\note') # note will still be wrapped with {}
+      
+      # Determine what letter to give this footnote
       _, footid, note = re.match(r'(\{(\w)\})?([\w\W]*)', note).groups()
       if footid is None:
          footid = self.footnote_ids.pop(0)
@@ -280,10 +282,14 @@ class Table(object):
          else:
             # already added 
             addnote = False
-            
+      
+      # Determine where to put the mark in cleaned text
+      if '\tablenotemark' not in clean:
+          clean += r'\tablenotemark{%s}'%(footid)
+    
       if addnote:
          self.footnotes.append(r'\tablenotetext{%s}%s'%(footid,note))
-      return  clean + r'\tablenotemark{%s}'%(footid)
+      return  clean
       
       
    def add_header_row(self, headers, cols=None):
