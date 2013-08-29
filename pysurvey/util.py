@@ -7,9 +7,12 @@ import sys
 import socket
 import datetime
 import inspect
+import traceback
 import collections
 
 # Installed Libraries
+import ipdb
+import numpy as np
 from clint.textui import colored, puts
 
 # Package Imports
@@ -31,16 +34,13 @@ def setup_stop():
     from IPython import embed; embed() 
     
     '''
-    import numpy as np
     np.set_printoptions(precision=3, suppress=True)
-    import ipdb
-    import traceback
+    
+    
     
     def excepthook(ec, ei, tb):
         '''the Exception Hook'''
         traceback.print_exception(ec, ei, tb)
-        
-        
         # splog('Variables', color='red', stack=-1)
         # for item,value in vars().items():
         #     v = '{}'.format(value)
@@ -57,10 +57,11 @@ def gethostname():
     '''Get the hostname of the current machine.  This is a wrapper around socket.gethostname
     since it is nice to attempt to get the FQDN rather than just the hostname.  Sometimes
     the FDQN fails on osx, so then just return the default hostname'''
-    try:
-        return socket.gethostbyaddr(socket.gethostname())[0]
-    except:
-        return socket.gethostname()
+    return socket.gethostname()
+    # try:
+    #     return socket.gethostbyaddr(socket.gethostname())[0]
+    # except:
+    #     return socket.gethostname()
 
 def ishostname(host):
     hostname = gethostname()

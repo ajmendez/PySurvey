@@ -19,19 +19,19 @@ built after many years of IDL so there is that.
                   autoTick=True)
 
 
-SubPackages
-=========
+SubPackages:
+------------
 
-Lists look like this:
+Documentation soon:
 
 * plot -- plotting routines
-
 * polygon -- Mangle Polygons
-
 * catalog -- fits catalog handling and loading
-
 * util -- A nice set of utilities like spherematch and match
 
+
+Requirements:
+-------------
 
 * pip install http://www.astro.rug.nl/software/kapteyn/kapteyn-2.2.tar.gz
 * pip install git+https://github.com/leejjoon/pywcsgrid2.git

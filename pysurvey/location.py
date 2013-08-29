@@ -67,6 +67,11 @@ def convert2distance(ra, dec, z, center):
     rz = cosmolopy.distance.comoving_distance(z, **p)*p['h']
     return rx,ry,rz
 
+def comoving_distance(z):
+    p = _cosmology()
+    rz = cosmolopy.distance.comoving_distance(z, **p)*p['h']
+    return rz
+
 
 def redshiftvolume(area, zrange, zbins=100):
     '''Gets the volume by integrating the area times zbins
