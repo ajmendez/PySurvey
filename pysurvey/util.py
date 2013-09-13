@@ -11,8 +11,6 @@ import traceback
 import collections
 
 # Installed Libraries
-import ipdb
-import numpy as np
 from clint.textui import colored, puts
 
 # Package Imports
@@ -34,7 +32,9 @@ def setup_stop():
     from IPython import embed; embed() 
     
     '''
-    np.set_printoptions(precision=3, suppress=True)
+    
+    # import numpy as np
+    # np.set_printoptions(precision=3, suppress=True)
     
     
     
@@ -46,6 +46,7 @@ def setup_stop():
         #     v = '{}'.format(value)
         #     if 'module' not in v:
         #         splog('{}: {}'.format(item, v), color='red', stack=-1)
+        import ipdb
         ipdb.pm()
     
     sys.excepthook = excepthook

@@ -5,6 +5,7 @@
 import numpy as np
 import pywcs
 import cosmolopy
+import scipy.interpolate
 
 # [Package]
 
@@ -71,6 +72,14 @@ def comoving_distance(z):
     p = _cosmology()
     rz = cosmolopy.distance.comoving_distance(z, **p)*p['h']
     return rz
+
+def redshift_interpol():
+    '''return a function that takes rz comoving distances and converts
+    them back to nice redshifts'''
+    z = np.arange(0,5,0.01)
+    rz = comoving_distance(z)
+    f = scipy.interpolate.interp1d(rz,z)
+    return f
 
 
 def redshiftvolume(area, zrange, zbins=100):

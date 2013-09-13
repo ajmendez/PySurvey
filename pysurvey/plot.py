@@ -11,6 +11,7 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.gridspec as gridspec
 import mpl_toolkits.axes_grid1 as axes_grid1
+import matplotlib.patheffects as PathEffects
 import matplotlib.ticker
 
 
@@ -118,13 +119,17 @@ class PDF(object):
 
 def legend(handles=None, labels=None, 
            textsize=9, zorder=None, box=None, 
+           alpha=None,
            reverse=False, **kwargs):
     '''Set a better legend
     zorder=int -- layer ordering
     box = T/F -- dra`w the box or not
     
     http://matplotlib.org/users/legend_guide.html
+    
+    http://matplotlib.org/users/recipes.html
     '''
+    kwargs.setdefault('fancybox', True)
     kwargs.setdefault('numpoints',1)
     kwargs.setdefault('prop',{'size':textsize})
     
@@ -151,6 +156,9 @@ def legend(handles=None, labels=None,
     if box is not None:
         l.draw_frame(box)
     
+    if alpha is not None:
+        l.get_frame().set_alpha(alpha)
+    
     return l
     
     
@@ -163,7 +171,7 @@ def setup(subplt=None,
           xtickv=None, xticknames=None, halfxlog=False,
           ytickv=None, yticknames=None,
           suptitle=None, suptitle_prop=None, 
-          subtitle=None, subtitle_prop=None, subtitleloc=1,
+          subtitle=None, subtitle_prop=None, subtitleloc=1, 
           title=None,
           xticks=True, yticks=True, autoticks=False,
           grid=True, tickmarks=True, font=True,
@@ -241,7 +249,13 @@ def setup(subplt=None,
         if subtitle_prop is not None:
             prop.update(subtitle_prop)
         loc = prop.pop('location')
-        pylab.text(loc[0], loc[1], subtitle, **prop)
+        outline = prop.pop('outline',False)
+        txt = pylab.text(loc[0], loc[1], subtitle, **prop)
+        if outline:
+            txt.set_path_effects(
+                [PathEffects.Stroke(linewidth=3.5, foreground="w"),
+                 PathEffects.Normal()])
+            # raise ValueError()
     
     
     if xtickv is not None:
@@ -351,10 +365,24 @@ def _getextent(extent, X,Y):
         extent = math.minmax(X, nan=False) + math.minmax(Y, nan=False)
     return extent
     
-def _getvrange(vrange, Z, p=0.05):
+def _getvrange(vrange, X,Y,Z, inaxis=None, p=0.05):
     '''Return the vertical / value range'''
+    if inaxis is None:
+        inaxis = False
+    
     if vrange is None:
-        vrange = math.embiggen(math.minmax(Z, nan=False), p, mode='upper')
+        if inaxis:
+            axis = pylab.gca().axis()
+            xr = math.minmax(axis[:2])
+            yr = math.minmax(axis[2:])
+            XX, YY = np.meshgrid(X,Y)
+            ii = np.where( (XX >= xr[0]) &
+                           (XX <= xr[1]) &
+                           (YY >= yr[0]) &
+                           (YY <= yr[1]) )
+            vrange = math.embiggen(math.minmax(Z[ii], nan=False), p, mode='upper')
+        else:
+            vrange = math.embiggen(math.minmax(Z, nan=False), p, mode='upper')
     return vrange
 
 def _getcmap(cmap):
@@ -389,7 +417,7 @@ def colorbar(a, b=None, clabel=None,
 
 
 def image(X,Y,Z, origin='lower', interpolation='nearest',
-          vrange=None, extent=None, 
+          vrange=None, extent=None, inaxis=None,
           cmap=None, addcolorbar=True, clabel=None):
     '''A nice wrapper around imshow.
     vrange = (vmin, vmax) -- Z value range
@@ -399,7 +427,7 @@ def image(X,Y,Z, origin='lower', interpolation='nearest',
     
     # calculate the spatial location and vertical / value range
     extent = _getextent(extent, X, Y)
-    vrange = _getvrange(vrange, Z)
+    vrange = _getvrange(vrange, X,Y,Z, inaxis=inaxis)
     
     # get a nice color map with nans set to be
     cmap = _getcmap(cmap)
@@ -447,13 +475,14 @@ def _smooth(X,Y,Z, smoothlen):
 
 def contour(X,Y,Z, 
            extent=None, vrange=None, levels=None, extend='both', 
+           inaxis=None,
            cmap=None, addcolorbar=True, clabel=None,
            smooth=True, smoothlen=None):
     '''Build a super fancy contour image'''
     
     # Build up some nice ranges and levels to be plotted 
     extent = _getextent(extent, X, Y)
-    vrange = _getvrange(vrange, Z)
+    vrange = _getvrange(vrange, X,Y,Z, inaxis=inaxis)
     levels = _getlevels(levels, vrange)
     cmap   = _getcmap(cmap)
     
