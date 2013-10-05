@@ -630,7 +630,7 @@ def line(x=None, y=None, r=None, **kwargs):
 
 
 ### sky plots
-def setup_sky(header, subplt=111, delta=100, **kwargs):
+def setup_sky(header, subplt=111, delta=100, title=None, **kwargs):
     '''Setup a nice sky plot that handles images'''
     import pywcsgrid2 # slow as shit
     ax = pywcsgrid2.subplot(subplt, header=header)
@@ -643,6 +643,8 @@ def setup_sky(header, subplt=111, delta=100, **kwargs):
     ax.grid()
     ax.set_xlim(-delta,delta+header['naxis1'])
     ax.set_ylim(-delta,delta+header['naxis2'])
+    if title is not None:
+        pylab.title(title)
     return ax
     
 def skypoly(window, **kwargs):
@@ -724,24 +726,45 @@ def sky(ra, dec, **kwargs):
     
 
 
-def skyheader(ra, dec):
+def skyheader(ra, dec, npixel=None):
+    '''Generate a nice header from a set of ra bounds and dec bounds'''
+    if npixel is None:
+        npixel = [1000,1000]
     import pywcs # meh slow?
     dra,ddec = ra[1]-ra[0], dec[1]-dec[0]
-    dummy = pywcs.WCS(naxis=2)
-    dummy.wcs.crpix = [500, 500]  # pixel position
-    dummy.wcs.crval = [np.mean(ra), np.mean(dec)]   # RA, Dec (degrees)
-    dummy.wcs.ctype = ["RA---CAR", "DEC--CAR"]
-    dummy.wcs.cdelt = np.array([-dra, ddec])  / 1000.0
-
+    dummy = pywcs.WCS(naxis=2, minerr=1E-4)
+    # dummy.wcs.crpix = [npixel[0]/2, npixel[1]/2]  # pixel position
+    # dummy.wcs.crval = [np.mean(ra), np.mean(dec)]   # RA, Dec (degrees)
+    # dummy.wcs.crpix = [1,1]
+    # dummy.wcs.crval = [ra[0]+dra/npixel[0], dec[0]+ddec/npixel[1]]
+    dummy.wcs.crpix = [1,1]
+    dummy.wcs.crval = [ra[0], dec[0]]
+    
+    dummy.wcs.ctype = ["RA", "DEC"]
+    # dummy.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+    # dummy.wcs.ctype = ["RA---AIR", "DEC--AIR"]
+    
+    dummy.wcs.cdelt = [dra/npixel[0], ddec/npixel[1]]
+    # print [dra/npixel[0],ddec/npixel[1]]
+    # 
+    # tmp = dummy.wcs_pix2sky(np.array([npixel]), 0)
+    # print tmp
+    # print np.array([ra[1], dec[1]]) - tmp
+    
+    # print np.array([ra[1], dec[1]])
+    # print dummy.wcs_sky2pix(np.array([[ra[1], dec[1]]]), 0)
+    
+    
     header = dummy.to_header()
-    header.update('NAXIS1',1000)
-    header.update('NAXIS2',1000)
+    header.update('NAXIS1',npixel[0])
+    header.update('NAXIS2',npixel[1])
     header.update('EQUINOX', 2000.0)
-    del header['WCSAXES']
-    del header['RESTFRQ']
-    del header['RESTWAV']
-    del header['LONPOLE']
-    del header['LATPOLE']
+    
+    # del header['WCSAXES']
+    # del header['RESTFRQ']
+    # del header['RESTWAV']
+    # del header['LONPOLE']
+    # del header['LATPOLE']
     
     return header
 

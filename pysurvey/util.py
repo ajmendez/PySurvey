@@ -15,7 +15,6 @@ from clint.textui import colored, puts
 
 # Package Imports
 
-
 # nice variables
 SPLOG = {'multi':False, # multiprocessing setup
          'outfile':None, # save to disk
@@ -27,14 +26,14 @@ class stop(Exception):
 def setup_stop():
     '''Give a nice user hook
     or use 
-    import pdb; pdb.set_trace()
-    import ipdb; ipdb.set_trace()
-    from IPython import embed; embed() 
+    # import pdb; pdb.set_trace()
+    # import ipdb; ipdb.set_trace()
+    # from IPython import embed; embed() 
     
     '''
     
-    # import numpy as np
-    # np.set_printoptions(precision=3, suppress=True)
+    import numpy as np
+    np.set_printoptions(precision=3, suppress=True)
     
     
     
@@ -46,9 +45,8 @@ def setup_stop():
         #     v = '{}'.format(value)
         #     if 'module' not in v:
         #         splog('{}: {}'.format(item, v), color='red', stack=-1)
-        import ipdb
+        import ipdb # is slow, so kee[ it here.]
         ipdb.pm()
-    
     sys.excepthook = excepthook
 
 

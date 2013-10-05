@@ -15,9 +15,9 @@ def _cosmology():
     '''returns the values that match kCorrect and idl'''
     p = cosmolopy.fidcosmo # default values from cosmolpy
     n  = {
-        'h': 0.7,
-        'omega_M_0':0.3, 
-        'omega_lambda_0':0.7,
+        'h': 1.0,
+        'omega_M_0':0.27, 
+        'omega_lambda_0':0.73,
         'sigma_8':0.8,
     }
     p.update(n)
