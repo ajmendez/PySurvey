@@ -63,7 +63,7 @@ def convert2distance(ra, dec, z, center):
     '''
     p = _cosmology()
     dt = cosmolopy.distance.comoving_distance_transverse(z, **p)*p['h']
-    rx = dt*np.radians(ra - center[0])
+    rx = dt*np.radians(ra - center[0])*np.cos(np.radians(center[1]))
     ry = dt*np.radians(dec - center[1])
     rz = cosmolopy.distance.comoving_distance(z, **p)*p['h']
     return rx,ry,rz

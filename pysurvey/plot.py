@@ -164,7 +164,7 @@ def legend(handles=None, labels=None,
     
     
 
-def setup(subplt=None, 
+def setup(subplt=None, figsize=None, 
           xr=None, yr=None,
           xlog=False, ylog=False,
           xlabel=None, ylabel=None, 
@@ -194,6 +194,8 @@ def setup(subplt=None,
     you can pass in a gridspec
     '''
     
+    if figsize is not None:
+        fig = pylab.figure(figsize=figsize)
     
     ## Handle subplot being an int `223`, tuple `(2,2,3)` or gridspec 
     if subplt is None:
@@ -344,10 +346,6 @@ def setup(subplt=None,
         ax.set_rasterized(True)
     # temp
     return ax
-
-
-
-
 
 
 
