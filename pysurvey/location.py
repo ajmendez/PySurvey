@@ -82,7 +82,7 @@ def redshift_interpol():
     return f
 
 
-def redshiftvolume(area, zrange, zbins=100):
+def redshiftvolume(area, zrange, zbins=1000):
     '''Gets the volume by integrating the area times zbins
     area is in deg^2 
     zrange = [zmin, zmax] 
@@ -101,12 +101,13 @@ def redshiftvolume(area, zrange, zbins=100):
     # setup the variables
     p = _cosmology()
     z = np.linspace(zrange[0], zrange[1], zbins)
+    z2 = np.linspace(zrange[0], zrange[1], zbins+1)
     
     
     dt = cosmolopy.distance.comoving_distance_transverse(z, **p)*p['h']
     
     area = (dt*np.radians(np.sqrt(area)))**2
-    dz = cosmolopy.distance.comoving_distance(z, **p)*p['h']
+    dz = np.diff(cosmolopy.distance.comoving_distance(z2, **p)*p['h'])
     volume = np.sum(area*dz)
     return volume
 

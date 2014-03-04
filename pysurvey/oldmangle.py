@@ -223,7 +223,21 @@ class Mangle:
         return w
         # return self.weights[polyids]
     #...
-
+    
+    def get_range(self):
+        g = self.graphics()
+        ra = np.array([999.0,-999.0])
+        dec = np.array([999.0,-999.0])
+        for p in g:
+            for x in p['ra']:
+                if x < ra[0]: ra[0] = x
+                if x > ra[1]: ra[1] = x
+            for x in p['dec']:
+                if x < dec[0]: dec[0] = x
+                if x > dec[1]: dec[1] = x
+        return ra,dec
+    
+    
     def polyid(self,ra,dec):
         """Return the polyid of the polygon containing (ra,dec).
         
@@ -321,7 +335,7 @@ class Mangle:
                 str = "polygon %10d ( %d caps,"%(self.polyids[i],len(self.polylist[i]))
                 str+= " %.8f weight, %.15f str):\n"%(self.weights[i],self.areas[i])
             except:
-                print i, len(self.polylist), len(self.polyids)
+                print i, self.npoly #len(self.polylist), len(self.polyids), len(self.weights), len(self.areas)
                 raise
             ff.write(str)
             for cap in self.polylist[i]:
@@ -360,7 +374,7 @@ class Mangle:
         return mng2
     #...
 
-    def graphics(self, getweight=True):
+    def graphics(self):
         """Return an array of edge points, to plot these polygons.
 
         Calls the command-line 'poly2poly' to generate a temporary graphics
@@ -384,9 +398,11 @@ class Mangle:
         subprocess.call(call,shell=True)
         
         # NOTE: poly2poly -ol always outputs a separate weight file.
-        if getweight:
-            weights = np.loadtxt(tempOut.name+'.weight', usecols=(1,))
-            # dtype=[('weight','>f8')]
+        weights = np.loadtxt(tempOut.name+'.weight', usecols=(1,))
+        # print len(weights)
+        # if getweight:
+        #     weights = np.loadtxt(tempOut.name+'.weight', usecols=(1,))
+        #     # dtype=[('weight','>f8')]
         # os.remove(tempOut.name+'.weight')
         
         tempIn.close()
@@ -396,8 +412,11 @@ class Mangle:
         tempOut.close()
         
         # there seems to be a problem with npoly, so update
-        self.npoly = np.sum([1 if np.isnan(x[0]) else 0 for x in data])
-        polys = np.empty(self.npoly,dtype='object')
+        # print self.npoly
+        # self.npoly = np.sum([1 if np.isnan(x[0]) else 0 for x in data])
+        # print self.npoly
+        npoly = np.sum([1 if np.isnan(x[0]) else 0 for x in data])
+        polys = np.empty(npoly,dtype='object')
         
         
         i = 0
@@ -410,8 +429,8 @@ class Mangle:
             else:
                 temp.append(x)
         
-        if getweight:
-            return polys, weights
+        # if getweight:
+        #     return polys, weights
         
         return polys
     #...

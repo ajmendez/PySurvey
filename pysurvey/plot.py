@@ -8,6 +8,7 @@ import copy
 # Installed Libraries
 import pylab
 import numpy as np
+import matplotlib
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.gridspec as gridspec
 import mpl_toolkits.axes_grid1 as axes_grid1
@@ -160,12 +161,32 @@ def legend(handles=None, labels=None,
         l.get_frame().set_alpha(alpha)
     
     return l
-    
-    
-    
 
-def setup(subplt=None, figsize=None, 
-          xr=None, yr=None,
+
+def hcolorbar(*args, **kwargs):
+    label = kwargs.pop('label', None)
+    cticks = kwargs.pop('cticks',None)
+    axes = kwargs.pop('axes', [0.8,0.01,0.1,0.02])
+    ax = pylab.gca()
+    
+    tmp = dict(
+        cax = pylab.axes(axes),
+        orientation='horizontal',
+    )
+    tmp.update(kwargs)
+    cb = pylab.colorbar(*args, **tmp)
+    cb.set_label(label)
+    
+    if cticks is None:
+        cticks = np.linspace(cb.vmin, cb.vmax, 3)
+    cb.set_ticks(cticks)
+    
+    pylab.sca(ax)
+    return cb
+
+def setup(subplt=None, figsize=None, ax=None,
+          xr=None, xmin=None, xmax=None,
+          yr=None, ymin=None, ymax=None,
           xlog=False, ylog=False,
           xlabel=None, ylabel=None, 
           xtickv=None, xticknames=None, halfxlog=False,
@@ -194,12 +215,23 @@ def setup(subplt=None, figsize=None,
     you can pass in a gridspec
     '''
     
+    # if notebook:
+    #   # http://matplotlib.org/users/customizing.html
+    #   # http://damon-is-a-geek.com/publication-ready-the-first-time-beautiful-reproducible-plots-with-matplotlib.html
+    #   matplotlib.rcParams['savefig.dpi'] = 144
+    #   matplotlib.rcParams.update({'font.size': 12})
+    #   # matplotlib.rcParams['font.family'] = 'serif'
+    #   # matplotlib.rcParams['font.serif'] = ['Computer Modern Roman']
+    #   # matplotlib.rcParams['text.usetex'] = True
+    
+    
     if figsize is not None:
         fig = pylab.figure(figsize=figsize)
     
     ## Handle subplot being an int `223`, tuple `(2,2,3)` or gridspec 
     if subplt is None:
-        ax = pylab.gca()
+        if ax is None:
+            ax = pylab.gca()
     elif isinstance(subplt, (int, gridspec.GridSpec, gridspec.SubplotSpec) ):
         ax = pylab.subplot(subplt)
     else:
@@ -611,7 +643,7 @@ def line(x=None, y=None, r=None, **kwargs):
             x = [x]
         
         for a in x:
-            pylab.plot(np.ones(2)*a, yr, **kwargs)
+            pylab.plot([a,a], yr, **kwargs)
     
     if y is not None:
         xr = [xmin, xmax] if r is None else r
@@ -619,7 +651,7 @@ def line(x=None, y=None, r=None, **kwargs):
             y = [y]
         
         for a in y:
-            pylab.plot(xr, np.ones(2)*a, **kwargs)
+            pylab.plot(xr, [a,a], **kwargs)
 
 
 
@@ -649,6 +681,9 @@ def skypoly(window, **kwargs):
     from matplotlib.patches import Polygon
     from matplotlib.collections import PolyCollection, PatchCollection
     
+    vmin = kwargs.pop('vmin',None)
+    vmax = kwargs.pop('vmax',None)
+    
     cmap = kwargs.pop('cmap',None)
     if cmap is None:
         cmap = copy.copy(pylab.cm.gray_r)
@@ -657,23 +692,28 @@ def skypoly(window, **kwargs):
     try:
         ax = pylab.gca()['fk5']
     except Exception as e:
-        print e
+        # print e
         ax = pylab.gca()
     
     p,w = window.graphics()
     
+    print np.min(w), np.max(w)
+    
     patches = []
     for i,poly in enumerate(p):
         ra,dec = poly['ra'], poly['dec']
-        patches.append(Polygon(zip(ra,dec)) )
+        patches.append(Polygon(zip(ra,dec), edgecolor='none', lw=0.01) )
     
     tmp = {'cmap':cmap,
            'rasterized': True,
-           'edgecolors':'none'}
+           'edgecolors':'none',
+           'antialiaseds':True,
+         }
     tmp.update(kwargs)
     
     p = PatchCollection(patches, **tmp)
-    # p.set_array(w)
+    p.set_array(np.array(w))
+    p.set_clim(vmin,vmax)
     ax.add_collection(p)
     ax.set_aspect('equal')
     ax.set_rasterization_zorder(0)
