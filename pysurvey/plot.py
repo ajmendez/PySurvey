@@ -4,6 +4,7 @@
 # System Libraries
 import os
 import copy
+import warnings
 
 # Installed Libraries
 import pylab
@@ -264,26 +265,26 @@ def setup(subplt=None, figsize=None, ax=None,
     if title is not None:
         pylab.title(title)
     if suptitle is not None:
-        if suptitle_prop is None:
-            suptitle_prop = {}
-        pylab.suptitle(suptitle, **suptitle_prop)
+        tmp = dict(outline=True)
+        if suptitle_prop is not None:
+            tmp.update(subtitle_prop)
+        pylab.suptitle(suptitle, **tmp)
     if subtitle is not None:
+        prop = dict(transform=ax.transAxes)
         if subtitleloc == 1:
-            prop = {'location':(0.95,0.95),
-                    'horizontalalignment':'right',
-                    'verticalalignment':'top',
-                    'transform':ax.transAxes}
+            prop.update({'location':(0.95,0.95),
+                         'horizontalalignment':'right',
+                         'verticalalignment':'top'})
         elif subtitleloc == 3:
-            prop = {'location':(0.05,0.05),
-                    'horizontalalignment':'left',
-                    'verticalalignment':'bottom',
-                    'transform':ax.transAxes}
+            prop.update({'location':(0.05,0.05),
+                         'horizontalalignment':'left',
+                         'verticalalignment':'bottom'})
         else: 
             raise NotImplementedError('Get to work adding the following subtitle location: %d'%(subtitleloc))
         if subtitle_prop is not None:
             prop.update(subtitle_prop)
         loc = prop.pop('location')
-        outline = prop.pop('outline',False)
+        outline = prop.pop('outline',True)
         txt = pylab.text(loc[0], loc[1], subtitle, **prop)
         if outline:
             txt.set_path_effects(
@@ -388,6 +389,12 @@ def setup(subplt=None, figsize=None, ax=None,
 
 ### Spatial things
 
+def _getmesh(X,Y,Z):
+    if Z.shape != X.shape:
+        return np.meshgrid(X,Y)
+    else:
+        return X,Y
+
 
 def _getextent(extent, X,Y):
     '''Return the extent :: extent = (xmin, xmax, ymin, ymax) '''
@@ -395,7 +402,7 @@ def _getextent(extent, X,Y):
         extent = math.minmax(X, nan=False) + math.minmax(Y, nan=False)
     return extent
     
-def _getvrange(vrange, X,Y,Z, inaxis=None, p=0.05):
+def _getvrange(vrange, XX,YY,Z, inaxis=None, p=0.05):
     '''Return the vertical / value range'''
     if inaxis is None:
         inaxis = False
@@ -405,7 +412,7 @@ def _getvrange(vrange, X,Y,Z, inaxis=None, p=0.05):
             axis = pylab.gca().axis()
             xr = math.minmax(axis[:2])
             yr = math.minmax(axis[2:])
-            XX, YY = np.meshgrid(X,Y)
+            # XX, YY = np.meshgrid(X,Y)
             ii = np.where( (XX >= xr[0]) &
                            (XX <= xr[1]) &
                            (YY >= yr[0]) &
@@ -456,20 +463,32 @@ def image(X,Y,Z, origin='lower', interpolation='nearest',
     '''
     
     # calculate the spatial location and vertical / value range
+    XX, YY = _getmesh(X,Y,Z)
     extent = _getextent(extent, X, Y)
-    vrange = _getvrange(vrange, X,Y,Z, inaxis=inaxis)
+    vrange = _getvrange(vrange, XX,YY,Z, inaxis=inaxis)
     
     # get a nice color map with nans set to be
     cmap = _getcmap(cmap)
     
     # Make the masked array hiding the nans
-    MZ = np.ma.array(Z, mask=(np.isfinite(Z) is False) )
+    # MZ = np.ma.array(Z, mask=(np.isfinite(Z) is False) )
+    MZ = np.ma.array(Z, mask=np.isnan(Z))
     
     out = []
     
-    im = pylab.imshow(MZ, origin=origin, extent=extent,
-                      vmin=vrange[0], vmax=vrange[1],
-                      cmap=cmap, interpolation='nearest')
+    # with warnings.catch_warnings():
+    #     warnings.simplefilter("ignore")
+    #     im = pylab.imshow(MZ, origin=origin, extent=extent,
+    #                       vmin=vrange[0], vmax=vrange[1],
+    #                       cmap=cmap, interpolation='nearest')
+    im = pylab.pcolormesh(XX,YY, MZ, 
+                          vmin=vrange[0], vmax=vrange[1],
+                          cmap=cmap)
+    # box(y=[0,0.2], percent=True, color='r')
+    # pylab.plot(np.medians(XX,axis=0), np.median(MZ,axis=0)
+    # if addmedians:
+    #     med = np.median(MZ,axis=0)
+    #     box(y=[0,0.1], percent=True)
     
     # setup a colorbar and return it out for modifications
     if addcolorbar:
@@ -627,6 +646,21 @@ def scontour(x,y, levels=None, nbin=20,
 
 
 ### Helper function things
+
+
+def box(x=None, y=None, percent=False, **kwargs):
+    ax = pylab.gca()
+    axt = ax.axis()
+    if x is not None and percent: x = np.diff(axt[:2])*np.array(x) + axt[0]
+    if y is not None and percent: y = np.diff(axt[2:])*np.array(y) + axt[2]
+    if x is None: x = axt[:2]
+    if y is None: y = axt[2:]
+    
+    tmp = dict(color='0.2', alpha=0.4)
+    tmp.update(kwargs)
+    patch = pylab.Rectangle((x[0],y[0]),np.diff(x),np.diff(y), **tmp)
+    ax.add_patch(patch)
+    # return patch
 
 
 
