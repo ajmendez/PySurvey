@@ -374,7 +374,7 @@ class Mangle:
         return mng2
     #...
 
-    def graphics(self):
+    def graphics(self, getweight=False):
         """Return an array of edge points, to plot these polygons.
 
         Calls the command-line 'poly2poly' to generate a temporary graphics
@@ -429,8 +429,8 @@ class Mangle:
             else:
                 temp.append(x)
         
-        # if getweight:
-        #     return polys, weights
+        if getweight:
+            return polys, weights
         
         return polys
     #...

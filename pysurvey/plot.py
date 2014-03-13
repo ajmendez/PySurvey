@@ -647,6 +647,18 @@ def scontour(x,y, levels=None, nbin=20,
 
 ### Helper function things
 
+def text(*args, **kwargs):
+    outline = kwargs.pop('outline', True)
+    outlineprop = kwargs.pop('outlineprop', {})
+    txt = pylab.text(*args, **kwargs)
+    
+    if outline:
+        prop = dict(linewidth=3.5, foreground="w")
+        outlineprop.update(prop)
+        txt.set_path_effects(
+            [PathEffects.Stroke(**outlineprop),
+             PathEffects.Normal()])
+
 
 def box(x=None, y=None, percent=False, **kwargs):
     ax = pylab.gca()
@@ -715,8 +727,7 @@ def skypoly(window, **kwargs):
     from matplotlib.patches import Polygon
     from matplotlib.collections import PolyCollection, PatchCollection
     
-    vmin = kwargs.pop('vmin',None)
-    vmax = kwargs.pop('vmax',None)
+    
     
     cmap = kwargs.pop('cmap',None)
     if cmap is None:
@@ -729,9 +740,14 @@ def skypoly(window, **kwargs):
         # print e
         ax = pylab.gca()
     
-    p,w = window.graphics()
+    p,w = window.graphics(getweight=True)
+    if len(p) == 1: w = np.array([w])
+    vmin = kwargs.pop('vmin',np.max(w))
+    vmax = kwargs.pop('vmax',np.min(w))
+    if vmin==vmax:
+        vmin = vmax-1
+    # w = np.ones(len(p))
     
-    print np.min(w), np.max(w)
     
     patches = []
     for i,poly in enumerate(p):
@@ -746,7 +762,7 @@ def skypoly(window, **kwargs):
     tmp.update(kwargs)
     
     p = PatchCollection(patches, **tmp)
-    p.set_array(np.array(w))
+    p.set_array(w)
     p.set_clim(vmin,vmax)
     ax.add_collection(p)
     ax.set_aspect('equal')
