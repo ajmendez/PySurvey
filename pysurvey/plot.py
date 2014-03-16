@@ -265,10 +265,9 @@ def setup(subplt=None, figsize=None, ax=None,
     if title is not None:
         pylab.title(title)
     if suptitle is not None:
-        tmp = dict(outline=True)
-        if suptitle_prop is not None:
-            tmp.update(subtitle_prop)
-        pylab.suptitle(suptitle, **tmp)
+        if suptitle_prop is None:
+            suptitle_prop = {}
+        pylab.suptitle(suptitle, **suptitle_prop)
     if subtitle is not None:
         prop = dict(transform=ax.transAxes)
         if subtitleloc == 1:
@@ -530,8 +529,9 @@ def contour(X,Y,Z,
     '''Build a super fancy contour image'''
     
     # Build up some nice ranges and levels to be plotted 
-    extent = _getextent(extent, X, Y)
-    vrange = _getvrange(vrange, X,Y,Z, inaxis=inaxis)
+    XX, YY = _getmesh(X,Y,Z)
+    extent = _getextent(extent, XX, YY)
+    vrange = _getvrange(vrange, XX,YY,Z, inaxis=inaxis)
     levels = _getlevels(levels, vrange)
     cmap   = _getcmap(cmap)
     
