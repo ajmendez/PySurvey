@@ -61,12 +61,21 @@ def convert2distance(ra, dec, z, center):
     '''Convert ra,dec,z into Mpc/h units
     
     '''
+    dra = np.radians(ra-center[0])
+    ddec = np.radians(dec-center[1])
+    
     p = _cosmology()
     dt = cosmolopy.distance.comoving_distance_transverse(z, **p)*p['h']
-    rx = dt*np.radians(ra - center[0])*np.cos(np.radians(center[1]))
-    ry = dt*np.radians(dec - center[1])
+    rx = dt*dra*np.cos(np.radians(ddec))
+    ry = dt*ddec
     rz = cosmolopy.distance.comoving_distance(z, **p)*p['h']
     return rx,ry,rz
+    # p = _cosmology()
+    # dt = cosmolopy.distance.comoving_distance_transverse(z, **p)*p['h']
+    # rx = dt*np.radians(ra - center[0])*np.cos(np.radians(center[1]))
+    # ry = dt*np.radians(dec - center[1])
+    # rz = cosmolopy.distance.comoving_distance(z, **p)*p['h']
+    # return rx,ry,rz
 
 def comoving_distance(z):
     p = _cosmology()

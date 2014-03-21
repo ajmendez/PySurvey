@@ -9,6 +9,7 @@ import warnings
 # Installed Libraries
 import pylab
 import numpy as np
+import collections
 import matplotlib
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.gridspec as gridspec
@@ -685,7 +686,8 @@ def line(x=None, y=None, r=None, **kwargs):
     
     if x is not None:
         yr = [ymin, ymax] if r is None else r
-        if isinstance(x, (float, int)):
+        # if isinstance(x, (np.float32, float, int)):
+        if not isinstance(x, collections.Iterable):
             x = [x]
         
         for a in x:
@@ -693,9 +695,9 @@ def line(x=None, y=None, r=None, **kwargs):
     
     if y is not None:
         xr = [xmin, xmax] if r is None else r
-        if isinstance(y, (float, int)):
+        # if isinstance(y, (float, int)):
+        if not isinstance(y, collections.Iterable):
             y = [y]
-        
         for a in y:
             pylab.plot(xr, [a,a], **kwargs)
 
