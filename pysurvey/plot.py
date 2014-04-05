@@ -24,6 +24,8 @@ from pysurvey import util, file, math, oldmangle
 # from file import nicefile
 # from math import blur_image
 # from oldmangle import Mangle
+minmax = math.minmax
+
 
 OUTDIR = file.nicefile('$PYSURVEY_FIGURE')
 
@@ -41,7 +43,7 @@ def quick(*args, **kwargs):
     pylab.plot(*args, **tmp2)
     pylab.show()
 
-def hist(*args, **kwargs):
+def plothist(*args, **kwargs):
     '''simple little histogram that can be run from python bare.
     TODO: add in delta=[xmin,xmax,dx] to do a different style of binning.'''
     delta = kwargs.pop('delta', None)
@@ -57,6 +59,35 @@ def hist(*args, **kwargs):
     pylab.hist(*args, **tmp2)
     pylab.show()
 
+def hist(x,bins, weight=None, index=None, norm=None, bottom=None, filled=False, **kwargs):
+    rotate = kwargs.pop('rotate',False)
+    noplot = kwargs.pop('noplot',False)
+    if bottom is None: bottom=0.0
+    if index is not None:
+        x = x[index]
+        if weight is not None:
+            weight = weight[index]
+    v,l = np.histogram(x,bins,weights=weight)
+    d = np.diff(l)
+    l = l[:-1] + d/2.0
+    
+    if norm is not None:
+        v = v/float(np.max(v))*float(norm)
+    if bottom is not None:
+        v += bottom
+    if rotate:
+        l,v = v,l
+    if not noplot:
+        if filled:
+            # hack to fix pylab.bar's coloring 
+            if 'color' not in kwargs:
+                kwargs['color'] = next(pylab.gca()._get_lines.color_cycle)
+            pylab.bar(l,v-bottom, width=d, bottom=bottom, **kwargs)
+        else:
+            pylab.step(l,v, where='mid', **kwargs)
+    if rotate:
+        l,v = v,l
+    return l,v
 
 
 
@@ -166,7 +197,7 @@ def legend(handles=None, labels=None,
 
 
 def hcolorbar(*args, **kwargs):
-    label = kwargs.pop('label', None)
+    label = kwargs.pop('label', '')
     cticks = kwargs.pop('cticks',None)
     axes = kwargs.pop('axes', [0.8,0.01,0.1,0.02])
     ax = pylab.gca()
@@ -197,6 +228,7 @@ def setup(subplt=None, figsize=None, ax=None,
           subtitle=None, subtitle_prop=None, subtitleloc=1, 
           title=None,
           xticks=True, yticks=True, autoticks=False,
+          embiggenx=None, embiggeny=None,
           grid=True, tickmarks=True, font=True,
           adjust=True, hspace=0.1, wspace=0.1, aspect=None,
           rasterized=False,
@@ -362,6 +394,11 @@ def setup(subplt=None, figsize=None, ax=None,
         # 'auto', 'equal'
         ax.set_aspect(aspect)
     
+    if embiggenx:
+        
+        setup(xr=math.embiggen(ax.axis()[:2],embiggenx))
+    if embiggeny:
+        setup(yr=math.embiggen(ax.axis()[2:],embiggeny))
     
     if (xticks) and (halfxlog):
         xax = ax.xaxis

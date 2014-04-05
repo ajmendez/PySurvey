@@ -49,17 +49,18 @@ def embiggen(r, p=0.05, mode='both'):
     mode=['both'] -- increase both sides of the range ('both','upper','lower')
     '''
     xmin, xmax = r
-    sign = 1.0
-    if xmin > xmax:
-        sign = -1.0
-    delta = abs(xmax-xmin)
-    d = delta*p*sign
-    if mode == 'both':
-        return xmin-d, xmax+d
-    elif mode == 'upper':
-        return xmin, xmax+d
-    elif mode == 'lower':
-        return xmin-d, xmax
+    
+    
+    if isinstance(p,(float,int,np.float, np.int)):
+        if mode == 'both':
+            p = [p, p]
+        elif mode == 'upper':
+            p = [0, p]
+        elif mode == 'lower':
+            p = [p, 0]
+    
+    d = np.array(p) * np.array([-1,1]) * (xmax-xmin)
+    return [sum(x) for x in zip(r,d)]
 
 def match(X,Y):
     '''(unoptimized) -- Returns the matched index so that:
