@@ -278,7 +278,7 @@ def setup(subplt=None, figsize=None, ax=None,
     if yr is not None:
         ax.set_ylim(yr)
         pylab.autoscale(False, 'y', True)
-        
+    
     # Log stuff -- do this afterwards to ensure the minor tick marks are updated
     # can set the specific ticks using subsx, subsy -- 
     #   ax.set_xscale('log', subsx=[2, 3, 4, 5, 6, 7, 8, 9])

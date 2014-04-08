@@ -15,7 +15,8 @@ import numpy as np
 
 # Constants
 epat = re.compile(r'^([^e]+)e(.+)$')
-float_types = [types.FloatType, np.float16, np.float32, np.float64, np.float128]
+float_types = (types.FloatType, np.float16, np.float32, np.float64, np.float128)
+int_types = (int, types.IntType, np.int, np.int8, np.int16, np.int32, np.int64)
 
 
 
@@ -29,16 +30,22 @@ def total(d):
     '''
     row = []
     for i,col in enumerate(zip(*d)):
-        if isinstance(col[0], (int, float)):
-            c = [t if isinstance(t,(int,float)) else 0 for t in col if isinstance(t,(int,float))]
-            row.append(np.sum(c))
-        else:
+        c = []
+        for t in col:
+            if isinstance(t, (int,float)):
+                c.append(t)
+            elif isinstance(t, (str)):
+                try:
+                    c.append(float(t.strip().replace(',','')))
+                except:
+                    c.append('')
+        if isinstance(c[0], str):
             row.append('')
+        else:
+            row.append(np.sum(c))
+        # c = [t if isinstance(t,(int,float)) else 0 for t in col if isinstance(t,(int,float))]
             
     row[0] = 'Totals:'
-    
-    # print 
-    # import pdb; pdb.set_trace()
     return row
 
 
@@ -49,7 +56,9 @@ def dash(n):
         return '-'
     
     if isinstance(n,float):
-        return '%0.2f'%(n)
+        return '{:0,.2f}'.format(n)
+    if isinstance(n, int):
+        return '{:0,d}'.format(n)
     
     return str(n)
 
@@ -65,11 +74,18 @@ def format(d, fcn=None):
     return out
 
 
-def n(array):
+def n(array, norm=1.0):
     ''' A simple little binary counter'''
-    return len(np.where(array)[0])
+    if norm == 0:
+        return len(np.where(array)[0])
+    return int(len(np.where(array)[0])/float(norm))
 
 
+def bignum(n):
+    return '{:0,.0f}'.format(n)
+
+def num(*args, **kwargs):
+    return bignum(n(*args, **kwargs))
 
 
 
@@ -94,7 +110,12 @@ def round_sig(x, n):
    expo = int(expo)
    fs = string.split(num,'.')
    if len(fs) < 2:
+      try:
+          fs[0] = '{:0,.0f}'.format(float(fs[0]))
+      except:
+          pass
       fs = [fs[0],""]
+      print fs
    if expo == 0:
       return num
    elif expo > 0:
@@ -477,6 +498,8 @@ class Table(object):
                         rows[-1].append('\\ldots')
                      else:
                         rows[-1].append(round_sig(data[k][j], sf))
+                  elif type(data[k][j]) in int_types:
+                     rows[-1].append('{:0,d}'.format(data[k][j]))
                   else:
                      rows[-1].append(str(data[k][j]))
                else:
