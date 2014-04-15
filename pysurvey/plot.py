@@ -25,7 +25,7 @@ from pysurvey import util, file, math, oldmangle
 # from math import blur_image
 # from oldmangle import Mangle
 minmax = math.minmax
-
+embiggen = math.embiggen
 
 OUTDIR = file.nicefile('$PYSURVEY_FIGURE')
 
@@ -47,6 +47,7 @@ def plothist(*args, **kwargs):
     '''simple little histogram that can be run from python bare.
     TODO: add in delta=[xmin,xmax,dx] to do a different style of binning.'''
     delta = kwargs.pop('delta', None)
+    
     if delta is not None:
         kwargs['bins'] = np.arange(*delta)
         
@@ -59,20 +60,49 @@ def plothist(*args, **kwargs):
     pylab.hist(*args, **tmp2)
     pylab.show()
 
-def hist(x,bins, weight=None, index=None, norm=None, bottom=None, filled=False, **kwargs):
+def hist(x,bins, weight=None, index=None, 
+         norm=None, frac=False, total=False, 
+         cumulative=False, revcumulative=False,
+         bottom=None, filled=False, 
+         **kwargs):
+    '''
+    norm == set max value of hist
+    frac == return the fraction index is of the entire sample 
+    
+    '''
     rotate = kwargs.pop('rotate',False)
     noplot = kwargs.pop('noplot',False)
     if bottom is None: bottom=0.0
     if index is not None:
-        x = x[index]
+        xx = x[index]
         if weight is not None:
-            weight = weight[index]
-    v,l = np.histogram(x,bins,weights=weight)
+            ww = weight[index]
+        else:
+            ww = None
+    else:
+        xx = x
+        ww = weight
+    
+    v,l = np.histogram(xx,bins,weights=ww)
     d = np.diff(l)
     l = l[:-1] + d/2.0
     
+    if frac:
+        vv = np.histogram(x,bins, weight)[0]
+        ii = np.where(vv == 0)
+        v = np.array(v)*1.0/np.array(vv)
+        v[ii] = 0
+    
+    if cumulative:
+        v = np.cumsum(v)
+    if revcumulative:
+        v = np.cumsum(v[::-1])[::-1] 
+    
     if norm is not None:
         v = v/float(np.max(v))*float(norm)
+    if total:
+        v = v / (1.0*np.sum(v))
+    
     if bottom is not None:
         v += bottom
     if rotate:
@@ -263,13 +293,16 @@ def setup(subplt=None, figsize=None, ax=None,
         fig = pylab.figure(figsize=figsize)
     
     ## Handle subplot being an int `223`, tuple `(2,2,3)` or gridspec 
-    if subplt is None:
-        if ax is None:
-            ax = pylab.gca()
-    elif isinstance(subplt, (int, gridspec.GridSpec, gridspec.SubplotSpec) ):
-        ax = pylab.subplot(subplt)
-    else:
-        ax = pylab.subplot(*subplt)
+    try:
+        if subplt is None:
+            if ax is None:
+                ax = pylab.gca()
+        elif isinstance(subplt, (int, gridspec.GridSpec, gridspec.SubplotSpec) ):
+            ax = pylab.subplot(subplt)
+        else:
+            ax = pylab.subplot(*subplt)
+    except Exception as e:
+        raise ValueError('Failed to setup subplt:[{}] -- probably indexing error'.format(subplt))
     
     # Ranges -- Setting either xr,yr stops the auto ranging
     if xr is not None:
