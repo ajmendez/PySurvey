@@ -105,18 +105,25 @@ def hist(x,bins, weight=None, index=None,
     
     if bottom is not None:
         v += bottom
-    if rotate:
-        l,v = v,l
+    # if rotate:
+    #     l,v = v,l
     if not noplot:
         if filled:
+            kwargs.setdefault('align', 'center')
             # hack to fix pylab.bar's coloring 
             if 'color' not in kwargs:
                 kwargs['color'] = next(pylab.gca()._get_lines.color_cycle)
-            pylab.bar(l,v-bottom, width=d, bottom=bottom, **kwargs)
+            if rotate:
+                pylab.barh(l,v-bottom, height=d, left=bottom, **kwargs)
+            else:
+                pylab.bar(l,v-bottom, width=d, bottom=bottom, **kwargs)
         else:
-            pylab.step(l,v, where='mid', **kwargs)
-    if rotate:
-        l,v = v,l
+            if rotate:
+                pylab.step(v,l, where='mid', **kwargs)
+            else:
+                pylab.step(l,v, where='mid', **kwargs)
+    # if rotate:
+    #     l,v = v,l
     return l,v
 
 
