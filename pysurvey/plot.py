@@ -5,6 +5,7 @@
 import os
 import copy
 import warnings
+from datetime import datetime
 
 # Installed Libraries
 import pylab
@@ -746,9 +747,14 @@ def box(x=None, y=None, percent=False, **kwargs):
     if x is None: x = axt[:2]
     if y is None: y = axt[2:]
     
+    dx = np.diff(x)[0]
+    if isinstance(x[0], datetime): dx = dx.days
+    dy = np.diff(y)[0]
+    if isinstance(y[0], datetime): dy = dy.total_seconds()
+    
     tmp = dict(color='0.2', alpha=0.4)
     tmp.update(kwargs)
-    patch = pylab.Rectangle((x[0],y[0]),np.diff(x),np.diff(y), **tmp)
+    patch = pylab.Rectangle((x[0],y[0]),dx,dy, **tmp)
     ax.add_patch(patch)
     # return patch
 
