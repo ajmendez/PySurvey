@@ -32,7 +32,7 @@ def total(d):
     for i,col in enumerate(zip(*d)):
         c = []
         for t in col:
-            if isinstance(t, (int,float)):
+            if isinstance(t, (int,float,list,tuple)):
                 c.append(t)
             elif isinstance(t, (str)):
                 try:
@@ -41,6 +41,9 @@ def total(d):
                     c.append('')
         if isinstance(c[0], str):
             row.append('')
+        elif isinstance(c[0], (tuple,list)):
+            # row.append( '{:d} ({:d})'.format(*np.sum(zip(*c),axis=1) ))
+            row.append(np.sum(zip(*c),axis=1).tolist())
         else:
             row.append(np.sum(c))
         # c = [t if isinstance(t,(int,float)) else 0 for t in col if isinstance(t,(int,float))]
@@ -59,7 +62,12 @@ def dash(n):
         return '{:0,.2f}'.format(n)
     if isinstance(n, int):
         return '{:0,d}'.format(n)
-    
+    if isinstance(n,(tuple,list, np.ndarray)):
+        print n
+        if n[0] == 0:
+            return '-'
+        return '{:d} ({:d})'.format(*n)
+        
     return str(n)
 
 
