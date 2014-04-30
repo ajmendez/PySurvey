@@ -61,7 +61,7 @@ def plothist(*args, **kwargs):
     pylab.hist(*args, **tmp2)
     pylab.show()
 
-def hist(x,bins, weight=None, index=None, 
+def hist(x,bins, weight=None, weights=None, index=None, 
          norm=None, frac=False, total=False, 
          cumulative=False, revcumulative=False,
          bottom=None, filled=False, 
@@ -76,8 +76,12 @@ def hist(x,bins, weight=None, index=None,
     if bottom is None: bottom=0.0
     if index is not None:
         xx = x[index]
+        if weight is not None and weights is not None:
+            raise ValueError('Only supply one.  This is just so that you can push weight and weights')
         if weight is not None:
             ww = weight[index]
+        elif weights is not None:
+            ww = weights[index]
         else:
             ww = None
     else:
@@ -358,11 +362,13 @@ def setup(subplt=None, figsize=None, ax=None,
             prop.update(subtitle_prop)
         loc = prop.pop('location')
         outline = prop.pop('outline',True)
+        outlinewidth = prop.pop('linewidth',3.5)
         txt = pylab.text(loc[0], loc[1], subtitle, **prop)
         if outline:
-            txt.set_path_effects(
-                [PathEffects.Stroke(linewidth=3.5, foreground="w"),
-                 PathEffects.Normal()])
+            pylab.setp(txt,path_effects=[PathEffects.Stroke(linewidth=outlinewidth, foreground="w")])
+            # txt.set_path_effects(
+            #     [PathEffects.Stroke(linewidth=outlinewidth, foreground="w"),
+            #      PathEffects.Normal()])
             # raise ValueError()
     
     
@@ -419,6 +425,12 @@ def setup(subplt=None, figsize=None, ax=None,
         ax.tick_params('both', which='major', length=5, width=2)
         ax.tick_params('both', which='minor', length=3, width=1)
         ax.minorticks_on()
+    else:
+        ax.minorticks_off()
+        pylab.tick_params(axis='both',which='both',
+                          bottom='off', top='off',
+                          left='off', right='off')
+        
     
     if adjust:
         pylab.subplots_adjust(hspace=hspace, wspace=wspace)
