@@ -7,6 +7,7 @@ import numpy as np
 import scipy
 import scipy.signal
 import scipy.optimize 
+from pprint import pprint
 from scipy.interpolate import interp1d
 
 # [Package]
@@ -141,6 +142,7 @@ def fit(function, parameters, x, y, yerr=None):
     p = [param() for param in parameters]
     
     xx, cov_x, infodict, mesg, ier = scipy.optimize.leastsq(f, p, full_output=True)
+    # pprint([ier,mesg])
     if ier not in [1,2,3,4]:
         return [-999.0 for param in parameters]
     else:
