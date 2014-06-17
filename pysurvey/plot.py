@@ -12,11 +12,14 @@ import pylab
 import numpy as np
 import collections
 import matplotlib
-from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.ticker
+from matplotlib import ticker
+from matplotlib.dates import date2num, num2date
 import matplotlib.gridspec as gridspec
 import mpl_toolkits.axes_grid1 as axes_grid1
 import matplotlib.patheffects as PathEffects
-import matplotlib.ticker
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 
 # Package Imports
@@ -238,6 +241,11 @@ def legend(handles=None, labels=None,
     return l
 
 
+
+
+
+
+
 def hcolorbar(*args, **kwargs):
     label = kwargs.pop('label', '')
     cticks = kwargs.pop('cticks',None)
@@ -365,10 +373,10 @@ def setup(subplt=None, figsize=None, ax=None,
         outlinewidth = prop.pop('linewidth',3.5)
         txt = pylab.text(loc[0], loc[1], subtitle, **prop)
         if outline:
-            pylab.setp(txt,path_effects=[PathEffects.Stroke(linewidth=outlinewidth, foreground="w")])
-            # txt.set_path_effects(
-            #     [PathEffects.Stroke(linewidth=outlinewidth, foreground="w"),
-            #      PathEffects.Normal()])
+            # pylab.setp(txt,path_effects=[PathEffects.Stroke(linewidth=outlinewidth, foreground="w")]) # Broken
+            txt.set_path_effects(
+                [PathEffects.Stroke(linewidth=outlinewidth, foreground="w"),
+                 PathEffects.Normal()])
             # raise ValueError()
     
     
@@ -469,6 +477,11 @@ def setup(subplt=None, figsize=None, ax=None,
         ax.set_rasterized(True)
     # temp
     return ax
+
+
+
+
+
 
 
 
@@ -738,20 +751,40 @@ def scontour(x,y, levels=None, nbin=20,
 
 ### Helper function things
 
+def outline(item, color='w', width='3'):
+    '''Outlines an object'''
+    item.set_path_effects(
+        [PathEffects.Stroke(linewidth=width, foreground=color),
+         PathEffects.Normal()])
+
+
 def text(*args, **kwargs):
-    outline = kwargs.pop('outline', True)
-    outlineprop = kwargs.pop('outlineprop', {})
-    txt = pylab.text(*args, **kwargs)
+    '''Writes some text to the screen.
+    use normal=True to normalize to [0,1], axes units
+    outline=True to outline.  properties[color, width] given by outline_prop dict'''
     
-    if outline:
-        prop = dict(linewidth=3.5, foreground="w")
-        outlineprop.update(prop)
-        txt.set_path_effects(
-            [PathEffects.Stroke(**outlineprop),
-             PathEffects.Normal()])
+    normal = kwargs.pop('normal', False)
+    oline = kwargs.pop('outline', True)
+    outline_prop = kwargs.pop('outline_prop', {})
+    
+    ax = pylab.gca()
+    tmp = {}
+    if normal:
+        tmp['transform'] = ax.transAxes
+    tmp.update(kwargs)
+    
+    txt = pylab.text(*args, **tmp)
+    
+    if oline:
+        outline(txt, **outline_prop)
+        
+
 
 
 def box(x=None, y=None, percent=False, **kwargs):
+    oline = kwargs.pop('outline',False)
+    outline_prop = kwargs.pop('outline_prop',{})
+    
     ax = pylab.gca()
     axt = ax.axis()
     if x is not None and percent: x = np.diff(axt[:2])*np.array(x) + axt[0]
@@ -764,10 +797,17 @@ def box(x=None, y=None, percent=False, **kwargs):
     dy = np.diff(y)[0]
     if isinstance(y[0], datetime): dy = dy.total_seconds()
     
-    tmp = dict(color='0.2', alpha=0.4)
+    tmp = dict(color='0.2', alpha=0.4, linewidth=2,)
+    if oline:
+        tmp['facecolor'] = 'none'
+        tmp['edgecolor'] = kwargs.pop('color', tmp.pop('color'))
     tmp.update(kwargs)
     patch = pylab.Rectangle((x[0],y[0]),dx,dy, **tmp)
+    if oline:
+        outline(patch, **outline_prop)
     ax.add_patch(patch)
+    
+
     # return patch
 
 
@@ -775,6 +815,8 @@ def box(x=None, y=None, percent=False, **kwargs):
 def line(x=None, y=None, r=None, **kwargs):
     '''X,Y Arrays of lines to plot, r is the range of the line.'''
     xmin,xmax,ymin,ymax = pylab.axis()
+    oline = kwargs.pop('outline',False)
+    outline_prop = kwargs.pop('outline_prop',{})
     kwargs.setdefault('color','orange')
     kwargs.setdefault('linestyle','-')
     kwargs.setdefault('linewidth', 2)
@@ -786,7 +828,11 @@ def line(x=None, y=None, r=None, **kwargs):
             x = [x]
         
         for a in x:
-            pylab.plot([a,a], yr, **kwargs)
+            pl = pylab.plot([a,a], yr, **kwargs)
+            if oline:
+                outline(pl, **outline_prop)
+    
+    
     
     if y is not None:
         xr = [xmin, xmax] if r is None else r
@@ -795,6 +841,8 @@ def line(x=None, y=None, r=None, **kwargs):
             y = [y]
         for a in y:
             pylab.plot(xr, [a,a], **kwargs)
+            if oline:
+                outline(pl, **outline_prop)
 
 
 
@@ -978,4 +1026,9 @@ def _sky2():
 
 
 
+def dateticks(fmt='%Y-%m'):
+    '''setup the date ticks'''
+    dateticker = ticker.FuncFormatter(lambda numdate, _: num2date(numdate).strftime(fmt))
+    pylab.gca().xaxis.set_major_formatter(dateticker)
+    pylab.gcf().autofmt_xdate()
 
