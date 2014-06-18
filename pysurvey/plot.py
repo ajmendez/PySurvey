@@ -277,7 +277,7 @@ def setup(subplt=None, figsize=None, ax=None,
           suptitle=None, suptitle_prop=None, 
           subtitle=None, subtitle_prop=None, subtitleloc=1, 
           title=None,
-          xticks=True, yticks=True, autoticks=False,
+          xticks=None, yticks=None, autoticks=False,
           embiggenx=None, embiggeny=None,
           grid=True, tickmarks=True, font=True,
           adjust=True, hspace=0.1, wspace=0.1, aspect=None,
@@ -393,7 +393,7 @@ def setup(subplt=None, figsize=None, ax=None,
         
     
     # Axis hiding
-    if autoticks is True:
+    if autoticks:
         if not ( ( (isinstance(subplt, tuple) and len(subplt) == 3) ) or 
                  ( (isinstance(subplt, gridspec.SubplotSpec)) ) ):
             splog('Cannot setup auto ticks without a proper subplot')
@@ -404,10 +404,11 @@ def setup(subplt=None, figsize=None, ax=None,
             else:
                 rows,cols,i = subplt
             
-            if ( (i%cols) != 1 ):
+            if ( (i%cols) != 1 ) and (not yticks):
                 yticks = False
-            if ( i < (cols*(rows-1) + 1) ):
-                xticks = False
+            # if ( i < (cols*(rows-1) + 1) ) and (not xticks):
+            #     xticks = False
+            xticks = not ( ( i < (cols*(rows-1) + 1) ) and (not xticks) )
     
     
     
@@ -456,7 +457,6 @@ def setup(subplt=None, figsize=None, ax=None,
         ax.set_aspect(aspect)
     
     if embiggenx:
-        
         setup(xr=math.embiggen(ax.axis()[:2],embiggenx))
     if embiggeny:
         setup(yr=math.embiggen(ax.axis()[2:],embiggeny))
@@ -781,35 +781,6 @@ def text(*args, **kwargs):
 
 
 
-def box(x=None, y=None, percent=False, **kwargs):
-    oline = kwargs.pop('outline',False)
-    outline_prop = kwargs.pop('outline_prop',{})
-    
-    ax = pylab.gca()
-    axt = ax.axis()
-    if x is not None and percent: x = np.diff(axt[:2])*np.array(x) + axt[0]
-    if y is not None and percent: y = np.diff(axt[2:])*np.array(y) + axt[2]
-    if x is None: x = axt[:2]
-    if y is None: y = axt[2:]
-    
-    dx = np.diff(x)[0]
-    if isinstance(x[0], datetime): dx = dx.days
-    dy = np.diff(y)[0]
-    if isinstance(y[0], datetime): dy = dy.total_seconds()
-    
-    tmp = dict(color='0.2', alpha=0.4, linewidth=2,)
-    if oline:
-        tmp['facecolor'] = 'none'
-        tmp['edgecolor'] = kwargs.pop('color', tmp.pop('color'))
-    tmp.update(kwargs)
-    patch = pylab.Rectangle((x[0],y[0]),dx,dy, **tmp)
-    if oline:
-        outline(patch, **outline_prop)
-    ax.add_patch(patch)
-    
-
-    # return patch
-
 
 
 def line(x=None, y=None, r=None, **kwargs):
@@ -843,6 +814,72 @@ def line(x=None, y=None, r=None, **kwargs):
             pylab.plot(xr, [a,a], **kwargs)
             if oline:
                 outline(pl, **outline_prop)
+
+
+
+def box(x=None, y=None, normal=False, fill=True, **kwargs):
+    oline = kwargs.pop('outline',False)
+    outline_prop = kwargs.pop('outline_prop',{})
+    tmp = dict(color='0.2', alpha=0.4, linewidth=2,)
+    
+    ax = pylab.gca()
+    axt = ax.axis()
+    if normal:
+        tmp['transform'] = ax.transAxes
+    
+    # if x is not None and percent: x = np.diff(axt[:2])*np.array(x) + axt[0]
+    # if y is not None and percent: y = np.diff(axt[2:])*np.array(y) + axt[2]
+    if x is None: x = axt[:2]
+    if y is None: y = axt[2:]
+    
+    dx = np.diff(x)[0]
+    dy = np.diff(y)[0]
+    # use date2num
+    # if isinstance(x[0], datetime): dx = dx.days
+    # if isinstance(y[0], datetime): dy = dy.total_seconds()
+    
+    
+    if oline or (not fill):
+        tmp['facecolor'] = 'none'
+        tmp['edgecolor'] = kwargs.pop('color', tmp.pop('color'))
+    tmp.update(kwargs)
+    patch = pylab.Rectangle((x[0],y[0]),dx,dy, **tmp)
+    if oline:
+        outline(patch, **outline_prop)
+    ax.add_patch(patch)
+    
+
+    # return patch
+
+
+
+def polygon(x,y=None, normal=False, fill=True, **kwargs):
+    oline = kwargs.pop('outline',False)
+    outline_prop = kwargs.pop('outline_prop',{})
+    tmp = dict(color='0.2', alpha=0.4, linewidth=2,)
+    
+    ax = pylab.gca()
+    if normal:
+        tmp['transform'] = ax.transAxes
+    
+    
+    if y is not None:
+        x = np.array(zip(x,y))
+        
+    if oline or (not fill):
+        tmp['facecolor'] = 'none'
+        tmp['edgecolor'] = kwargs.pop('color', tmp.pop('color'))
+        
+    tmp.update(kwargs)
+    patch  = pylab.Polygon(x, **tmp)
+    
+    if oline:
+        outline(oatch, **outline_prop)
+        
+    ax.add_patch(patch)
+    return patch
+
+
 
 
 
