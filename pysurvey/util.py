@@ -45,8 +45,12 @@ def setup_stop():
         #     v = '{}'.format(value)
         #     if 'module' not in v:
         #         splog('{}: {}'.format(item, v), color='red', stack=-1)
-        import ipdb # is slow, so kee[ it here.]
-        ipdb.pm()
+        try:
+            import ipdb # is slow, so kee[ it here.]
+            ipdb.pm()
+        except:
+            import pdb
+            pdb.pm()
     sys.excepthook = excepthook
 
 
