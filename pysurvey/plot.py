@@ -248,20 +248,24 @@ def legend(handles=None, labels=None,
 
 def hcolorbar(*args, **kwargs):
     label = kwargs.pop('label', '')
+    nticks = kwargs.pop('nticks', 3)
     cticks = kwargs.pop('cticks',None)
     axes = kwargs.pop('axes', [0.8,0.01,0.1,0.02])
     ax = pylab.gca()
     
     tmp = dict(
-        cax = pylab.axes(axes),
+        # cax = pylab.axes(axes),
         orientation='horizontal',
     )
     tmp.update(kwargs)
+    if 'cax' not in tmp:
+        tmp['cax'] = pylab.axes(axes)
+    
     cb = pylab.colorbar(*args, **tmp)
     cb.set_label(label)
     
     if cticks is None:
-        cticks = np.linspace(cb.vmin, cb.vmax, 3)
+        cticks = np.linspace(cb.vmin, cb.vmax, nticks)
     cb.set_ticks(cticks)
     
     pylab.sca(ax)
