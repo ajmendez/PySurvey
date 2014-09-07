@@ -150,6 +150,17 @@ def fit(function, parameters, x, y, yerr=None):
 
 
 
+def gauss(x, params):
+    return params[2] * np.exp(-((x-params[0])/params[1])**2)
+
+
+def fit_gauss(x,y,params):
+    '''Params = [mean, sigma, height]'''
+    mu, sigma, height = map(Parameter,params)
+    def f(xx): 
+        return height() * np.exp(-((xx-mu())/sigma())**2)
+    return fit(gauss, [mu, sigma, height], x, y)
+
 
 
 

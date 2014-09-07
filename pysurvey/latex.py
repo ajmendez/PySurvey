@@ -260,9 +260,11 @@ class Table(object):
         a table instance, add columns, set options, then call the print method.'''
         
    def __init__(self, numcols, justs=None, fontsize=None, rotate=False, 
-         tablewidth=None, tablenum=None, 
+         tablewidth=None, tablenum=None, full=False,
          caption=None, label=None):
-
+         
+         
+      self.environment = 'deluxetable' + ('*' if full else '')
       self.numcols = numcols
       self.justs = justs
       if self.justs is None:
@@ -445,7 +447,7 @@ class Table(object):
    def print_preamble(self, fp):
       cols = "".join(self.justs)
       fp.write("%!TEX root = ../ms.tex\n")
-      fp.write("\\begin{deluxetable}{%s}\n" % cols)
+      fp.write("\\begin{%s}{%s}\n" % (self.environment, cols))
       if self.fontsize: fp.write("\\tabletypesize{%s}\n" % str(self.fontsize))
       if self.rotate: fp.write("\\rotate\n")
       if self.tablewidth is not None: 
@@ -463,7 +465,7 @@ class Table(object):
       fp.write("\\tablehead{\n")
 
       for i,headers in enumerate(self.headers):
-         end = ['\\\\\n',''][i == len(self.headers)-1]
+         end = ['\\\\',''][i == len(self.headers)-1]
          for j,header in enumerate(headers):
             if r'\\' in header: 
                header = r'\makecell[c]{%s}'%(header)
@@ -471,9 +473,11 @@ class Table(object):
             sep = [end,'&'][j < len(headers)-1]
             if len(np.shape(self.header_ids[i][j])) == 1:
                length = self.header_ids[i][j][1] - self.header_ids[i][j][0] + 1
-               fp.write("\\multicolumn{%d}{c}{%s} %s " % (length, header,sep))
+               fp.write(" \\multicolumn{%d}{c}{%s}" % (length, header))
             else:
-               fp.write("\\colhead{%s} %s " % (header,sep))
+               fp.write("  \\colhead{%s}" % header)
+               
+            fp.write(' %s\n'%(sep))
       fp.write("}\n")
 
    def print_data(self,fp):
@@ -528,5 +532,5 @@ class Table(object):
    def print_footer(self, fp):
       for footnote in self.footnotes:
          fp.write('%s\n' % footnote)
-      fp.write("\\end{deluxetable}\n")
+      fp.write("\\end{%s}\n"%(self.environment))
                      

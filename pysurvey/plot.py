@@ -136,7 +136,7 @@ def hist(x,bins, weight=None, weights=None, index=None,
 
 
 
-def saveplot(filename, clear=True, ext=None, nice=False):
+def saveplot(filename, clear=True, ext=None, nice=False, quiet=False):
     '''Save the current figure to a specific filename.  If the
     filename is not an absolute path it uses the $PYSURVEY_FIGURE
     directory'''
@@ -156,7 +156,8 @@ def saveplot(filename, clear=True, ext=None, nice=False):
     
     
     pylab.savefig(filename, dpi=150)
-    util.splog('Saved Figure:', filename)
+    if not quiet:
+        util.splog('Saved Figure:', filename)
     if clear:
         pylab.clf()
 
@@ -247,7 +248,16 @@ def legend(handles=None, labels=None,
 
 
 def hcolorbar(*args, **kwargs):
-    label = kwargs.pop('label', '')
+    '''Arguments, label='', nticks=[3], cticks=[None], axes=[[0.8,0.01,0.1,0.02]] #[left,bottom, width,height], cax=[None] colorbar axis
+    returns colorbar'''
+    try:
+        itemlabel = args[0].get_label()
+        if itemlabel.startswith('_'):
+            itemlabel = ''
+    except:
+        itemlabel = ''
+    
+    label = kwargs.pop('label', itemlabel)
     nticks = kwargs.pop('nticks', 3)
     cticks = kwargs.pop('cticks',None)
     axes = kwargs.pop('axes', [0.8,0.01,0.1,0.02])
