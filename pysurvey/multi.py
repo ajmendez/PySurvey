@@ -51,6 +51,16 @@ def do_work(args):
         raise
 
 
+def getargs(fcn, args):
+    out = []
+    for x in args:
+        if isinstance(x, str):
+            # should fix this to iterables
+            out.append([fcn]+[x])
+        else:
+            out.append([fcn]+[x])
+    return out
+
 
 def multi_process(fcn, args, n=None):
     '''Multiprocess a function with an iterable list of arguments (args).
@@ -70,7 +80,10 @@ def multi_process(fcn, args, n=None):
 
     start = util.deltatime()
     pool = multiprocessing.Pool(n)
-    p = pool.map_async(do_work, [[fcn]+list(x) for x in args])
+    # p = pool.map_async(do_work, [[fcn]+list(x) for x in args])
+    tmp = getargs(fcn,args)
+    print tmp
+    p = pool.map_async(do_work, tmp)
     try:
         # This is the timeout to wait for the results.  We default to something
         # really really large.
