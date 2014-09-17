@@ -58,7 +58,7 @@ def getargs(fcn, args):
             # should fix this to iterables
             out.append([fcn]+[x])
         else:
-            out.append([fcn]+[x])
+            out.append([fcn]+list(x))
     return out
 
 
@@ -82,7 +82,7 @@ def multi_process(fcn, args, n=None):
     pool = multiprocessing.Pool(n)
     # p = pool.map_async(do_work, [[fcn]+list(x) for x in args])
     tmp = getargs(fcn,args)
-    print tmp
+    # print tmp
     p = pool.map_async(do_work, tmp)
     try:
         # This is the timeout to wait for the results.  We default to something
