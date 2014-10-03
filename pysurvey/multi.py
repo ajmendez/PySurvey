@@ -54,11 +54,17 @@ def do_work(args):
 def getargs(fcn, args):
     out = []
     for x in args:
-        if isinstance(x, str):
-            # should fix this to iterables
-            out.append([fcn]+[x])
-        else:
+        try:
+            if isinstance(x, str): 
+                raise ValueError('Say no to strings')
             out.append([fcn]+list(x))
+        except:
+            out.append([fcn]+[x])
+        # if isinstance(x, str):
+        #     # should fix this to iterables
+        #     out.append([fcn]+[x])
+        # else:
+        #     out.append([fcn]+list(x))
     return out
 
 
