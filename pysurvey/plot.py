@@ -1081,5 +1081,6 @@ def dateticks(fmt='%Y-%m'):
     '''setup the date ticks'''
     dateticker = ticker.FuncFormatter(lambda numdate, _: num2date(numdate).strftime(fmt))
     pylab.gca().xaxis.set_major_formatter(dateticker)
-    pylab.gcf().autofmt_xdate()
+    # pylab.gcf().autofmt_xdate()
+    pylab.setp(pylab.xticks()[1], rotation=30, ha='right')
 
