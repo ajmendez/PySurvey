@@ -200,10 +200,10 @@ class PDF(object):
 def legend(handles=None, labels=None, 
            textsize=9, zorder=None, box=None, 
            alpha=None,
-           reverse=False, **kwargs):
+           reverse=False, ax=None, **kwargs):
     '''Set a better legend
     zorder=int -- layer ordering
-    box = T/F -- dra`w the box or not
+    box = T/F -- draw the box or not
     
     http://matplotlib.org/users/legend_guide.html
     
@@ -213,16 +213,18 @@ def legend(handles=None, labels=None,
     kwargs.setdefault('numpoints',1)
     kwargs.setdefault('prop',{'size':textsize})
     
+    if ax is None:
+        ax = pylab.gca()
+    
     args = []
     if handles is not None:
         args.append(handles)
     if labels is not None:
         args.append(labels)
     
-    l = pylab.legend(*args, **kwargs) 
+    l = ax.legend(*args, **kwargs) 
     
     if reverse:
-        ax = pylab.gca()
         handles, labels = ax.get_legend_handles_labels()
         
         return legend(handles[::-1], labels[::-1], zorder=zorder, box=box, **kwargs)
@@ -259,7 +261,8 @@ def hcolorbar(*args, **kwargs):
     
     label = kwargs.pop('label', itemlabel)
     nticks = kwargs.pop('nticks', 3)
-    cticks = kwargs.pop('cticks',None)
+    cticks = kwargs.pop('cticks', None)
+    tickfmt = kwargs.pop('tickfmt', None)
     axes = kwargs.pop('axes', [0.8,0.01,0.1,0.02])
     ax = pylab.gca()
     
@@ -277,6 +280,11 @@ def hcolorbar(*args, **kwargs):
     if cticks is None:
         cticks = np.linspace(cb.vmin, cb.vmax, nticks)
     cb.set_ticks(cticks)
+    
+    if tickfmt is not None:
+        tmp = map(tickfmt.format, cticks)
+        cb.set_ticklabels(tmp)
+    
     
     pylab.sca(ax)
     return cb
@@ -831,15 +839,18 @@ def line(x=None, y=None, r=None, **kwargs):
 
 
 
-def box(x=None, y=None, normal=False, fill=True, **kwargs):
+def box(x=None, y=None, normal=False, fill=True, ax=None,**kwargs):
     oline = kwargs.pop('outline',False)
     outline_prop = kwargs.pop('outline_prop',{})
     tmp = dict(color='0.2', alpha=0.4, linewidth=2,)
     
-    ax = pylab.gca()
+    if ax is None:
+        ax = pylab.gca()
     axt = ax.axis()
     if normal:
         tmp['transform'] = ax.transAxes
+    else:
+        tmp['transform'] = ax.transData
     
     # if x is not None and percent: x = np.diff(axt[:2])*np.array(x) + axt[0]
     # if y is not None and percent: y = np.diff(axt[2:])*np.array(y) + axt[2]
