@@ -792,14 +792,14 @@ def text(*args, **kwargs):
     normal = kwargs.pop('normal', False)
     oline = kwargs.pop('outline', True)
     outline_prop = kwargs.pop('outline_prop', {})
+    ax = kwargs.pop('ax', pylab.gca())
     
-    ax = pylab.gca()
     tmp = {}
     if normal:
         tmp['transform'] = ax.transAxes
     tmp.update(kwargs)
     
-    txt = pylab.text(*args, **tmp)
+    txt = ax.text(*args, **tmp)
     
     if oline:
         outline(txt, **outline_prop)
