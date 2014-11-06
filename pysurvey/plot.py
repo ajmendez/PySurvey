@@ -294,8 +294,9 @@ def setup(subplt=None, figsize=None, ax=None,
           yr=None, ymin=None, ymax=None,
           xlog=False, ylog=False,
           xlabel=None, ylabel=None, 
-          xtickv=None, xticknames=None, halfxlog=False,
-          ytickv=None, yticknames=None,
+          xtickv=None, xticknames=None, xtickrotate=None,
+          ytickv=None, yticknames=None, ytickrotate=None,
+          halfxlog=False,
           suptitle=None, suptitle_prop=None, 
           subtitle=None, subtitle_prop=None, subtitleloc=1, 
           title=None,
@@ -406,12 +407,15 @@ def setup(subplt=None, figsize=None, ax=None,
         ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(xtickv))
         if xticknames is not None:
             ax.xaxis.set_major_formatter(matplotlib.ticker.FixedFormatter(xticknames))
-        
+    if xtickrotate is not None:
+        pylab.setp(pylab.xticks()[1], rotation=xtickrotate, ha='right')
+    
     if ytickv is not None:
         ax.yaxis.set_major_locator(matplotlib.ticker.FixedLocator(ytickv))
         if yticknames is not None:
             ax.yaxis.set_major_formatter(matplotlib.ticker.FixedFormatter(yticknames))
-        
+    if ytickrotate is not None:
+        pylab.setp(pylab.yticks()[1], rotation=ytickrotate, ha='right')
         
     
     # Axis hiding
