@@ -408,7 +408,12 @@ def setup(subplt=None, figsize=None, ax=None,
         if xticknames is not None:
             ax.xaxis.set_major_formatter(matplotlib.ticker.FixedFormatter(xticknames))
     if xtickrotate is not None:
-        pylab.setp(pylab.xticks()[1], rotation=xtickrotate, ha='right')
+        tmp = dict(rotation=30, ha='right')
+        if isinstance(xtickrotate, dict):
+            tmp.update(xtickrotate)
+        else:
+            tmp['rotation'] = xtickrotate
+        pylab.setp(pylab.xticks()[1], **tmp)
     
     if ytickv is not None:
         ax.yaxis.set_major_locator(matplotlib.ticker.FixedLocator(ytickv))
@@ -1092,10 +1097,12 @@ def _sky2():
 
 
 
-def dateticks(fmt='%Y-%m'):
+def dateticks(fmt='%Y-%m', **kwargs):
     '''setup the date ticks'''
     dateticker = ticker.FuncFormatter(lambda numdate, _: num2date(numdate).strftime(fmt))
     pylab.gca().xaxis.set_major_formatter(dateticker)
     # pylab.gcf().autofmt_xdate()
-    pylab.setp(pylab.xticks()[1], rotation=30, ha='right')
+    tmp = dict(rotation=30, ha='right')
+    tmp.update(kwargs)
+    pylab.setp(pylab.xticks()[1], **tmp)
 
