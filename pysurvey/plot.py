@@ -784,9 +784,13 @@ def scontour(x,y, levels=None, nbin=20,
 
 def outline(item, color='w', width='3'):
     '''Outlines an object'''
-    item.set_path_effects(
-        [PathEffects.Stroke(linewidth=width, foreground=color),
-         PathEffects.Normal()])
+    if isinstance(item, (tuple, list)):
+        for it in item:
+            outline(it, color=color, width=width)
+    else:
+        item.set_path_effects(
+            [PathEffects.Stroke(linewidth=width, foreground=color),
+             PathEffects.Normal()])
 
 
 def text(*args, **kwargs):
@@ -842,7 +846,7 @@ def line(x=None, y=None, r=None, **kwargs):
         if not isinstance(y, collections.Iterable):
             y = [y]
         for a in y:
-            pylab.plot(xr, [a,a], **kwargs)
+            pl = pylab.plot(xr, [a,a], **kwargs)
             if oline:
                 outline(pl, **outline_prop)
 
