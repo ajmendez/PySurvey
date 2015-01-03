@@ -302,6 +302,8 @@ def setup(subplt=None, figsize=None, ax=None,
           title=None,
           xticks=None, yticks=None, autoticks=False,
           embiggenx=None, embiggeny=None,
+          secondx=False, secondx_prop=None,
+          secondy=False, secondy_prop=None,
           grid=True, tickmarks=True, font=True,
           adjust=True, hspace=0.1, wspace=0.1, aspect=None,
           rasterized=False,
@@ -346,6 +348,8 @@ def setup(subplt=None, figsize=None, ax=None,
             ax = pylab.subplot(*subplt)
     except Exception as e:
         raise ValueError('Failed to setup subplt:[{}] -- probably indexing error'.format(subplt))
+    
+    
     
     # Ranges -- Setting either xr,yr stops the auto ranging
     if xr is not None:
@@ -503,6 +507,99 @@ def setup(subplt=None, figsize=None, ax=None,
             else:
                 label.set_fontsize(0)
                 pylab.setp(label, visible=False)
+    
+
+    if secondx:
+        # second x axis
+        tmp = dict(xlabel=None,
+                   fcn=lambda arr: arr,
+                   fmt='{}',
+                   xr=ax.axis()[:2],
+                   xlog=('log' in ax.get_xscale()),
+                   # yr=ax.axis()[2:]
+                   xtickv=ax.get_xticks(),
+                   ) # defaults
+        if secondx_prop:
+            tmp.update(secondx_prop)
+            
+        # adjust some nice things
+        f = tmp.pop('fcn')
+        fcn = lambda arr: [f(x) for x in arr]
+        fmt = tmp.pop('fmt')
+        if isinstance(fmt, str): fmt = (fmt,fmt)
+        
+        if 'xtickv' in tmp:
+            tmp['xtickv'] = np.array(tmp['xtickv'])
+        
+        if 'xticknames' not in tmp:
+            arr = np.array(fcn(tmp['xtickv']))
+            tmp['xticknames'] = np.array([fmt[0].format(x) for x in arr])
+            if tmp['xlog'] and tmp['nicelog']:
+                ii = np.where((arr >= 1e1)&
+                              (arr < 1e4) )[0]
+                tmp['xticknames'][ii] = [fmt[1].format(x) for x in arr[ii]]
+                ii = np.where(arr >= 1e4)
+                tmp['xticknames'][ii] = [fmt[2].format(np.log10(x)) for x in arr[ii]]
+        
+        ax2 = ax.twiny() # I have never understood this
+        ax2.set_xlabel(tmp['xlabel'])
+        ax2.set_xlim(tmp['xr'])
+        if tmp['xlog']:
+            ax2.set_xscale('log', nonposx='clip')
+        if 'xtickv' in tmp:
+            ax2.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(tmp['xtickv']))
+        if 'xticknames' in tmp:
+            ax2.xaxis.set_major_formatter(matplotlib.ticker.FixedFormatter(tmp['xticknames']))
+        
+        ax.secondx = ax2
+        pylab.sca(ax)
+
+    if secondy:
+        # second x axis
+        tmp = dict(ylabel=None,
+                   fcn=lambda arr: arr,
+                   fmt='{}',
+                   yr=ax.axis()[2:],
+                   ylog=('log' in ax.get_yscale()),
+                   ytickv=ax.get_yticks(), )
+        if secondy_prop:
+            tmp.update(secondy_prop)
+            
+        # adjust some nice things
+        f = tmp.pop('fcn')
+        fcn = lambda arr: [f(x) for x in arr]
+        fmt = tmp.pop('fmt')
+        if isinstance(fmt, str): fmt = (fmt,fmt)
+        
+        if 'ytickv' in tmp:
+            tmp['ytickv'] = np.array(tmp['ytickv'])
+        
+        if 'yticknames' not in tmp:
+            arr = np.array(fcn(tmp['ytickv']))
+            tmp['yticknames'] = np.array([fmt[0].format(x) for x in arr])
+            if tmp['ylog'] and tmp['nicelog']:
+                ii = np.where((arr >= 1e1)&
+                              (arr < 1e4) )[0]
+                tmp['yticknames'][ii] = [fmt[1].format(x) for x in arr[ii]]
+                ii = np.where(arr >= 1e4)
+                tmp['yticknames'][ii] = [fmt[2].format(np.log10(x)) for x in arr[ii]]
+            
+        print tmp
+        
+        ax2 = ax.twinx() # I have never understood this
+        ax2.set_ylabel(tmp['ylabel'])
+        ax2.set_ylim(tmp['yr'])
+        if tmp['ylog']:
+            ax2.set_yscale('log', nonposx='clip')
+        if 'ytickv' in tmp:
+            ax2.yaxis.set_major_locator(matplotlib.ticker.FixedLocator(tmp['ytickv']))
+        if 'yticknames' in tmp:
+            ax2.yaxis.set_major_formatter(matplotlib.ticker.FixedFormatter(tmp['yticknames']))
+            
+        ax.secondy = ax2
+        pylab.sca(ax)
+
+    
     
     if rasterized:
         ax.set_rasterized(True)
