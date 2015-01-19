@@ -262,6 +262,9 @@ def hcolorbar(*args, **kwargs):
     label = kwargs.pop('label', itemlabel)
     nticks = kwargs.pop('nticks', 3)
     cticks = kwargs.pop('cticks', None)
+    cticknames = kwargs.pop('cticknames', None)
+    rotate = kwargs.pop('rotate', None)
+    
     tickfmt = kwargs.pop('tickfmt', None)
     axes = kwargs.pop('axes', [0.8,0.01,0.1,0.02])
     ax = pylab.gca()
@@ -285,6 +288,12 @@ def hcolorbar(*args, **kwargs):
         tmp = map(tickfmt.format, cticks)
         cb.set_ticklabels(tmp)
     
+    if cticknames is not None:
+        cb.set_ticklabels(cticknames)
+    
+    if rotate is not None:
+        pylab.setp(pylab.xticks(axes=cb.ax)[1], rotation=90, ha='center')
+        
     
     pylab.sca(ax)
     return cb
