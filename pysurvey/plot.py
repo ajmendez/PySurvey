@@ -19,7 +19,7 @@ import matplotlib.gridspec as gridspec
 import mpl_toolkits.axes_grid1 as axes_grid1
 import matplotlib.patheffects as PathEffects
 from matplotlib.backends.backend_pdf import PdfPages
-
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
 # Package Imports
@@ -170,7 +170,8 @@ class PDF(object):
             filename = os.path.join(OUTDIR,filename+ext)
         self.filename = filename
         self.pdf = PdfPages(filename)
-        pylab.figure('pdf_fig', **kwargs)
+        
+        # pylab.figure('pdf_fig', **kwargs)
             
     def __enter__(self):
         '''Start with with constructor.'''
@@ -243,6 +244,98 @@ def legend(handles=None, labels=None,
     
     return l
 
+
+
+def icolorbar(mappable, loc=2, orientation='horizontal', borderpad=1,
+              width=None, height=None, ax=None, 
+              label=None, axes_kwargs=None,
+              **kwargs):
+    '''An inset colorbar.  Should be a simple replacement for colorbar
+    orientation='horizontal', width='30%', height='2%'
+    orientation='vertical', width='5%', height='25%'
+    
+    bbox_to_anchor=(1.05, 0., 1, 1),
+    bbox_transform=ax2.transAxes,
+    borderpad=0,
+    
+    http://matplotlib.org/examples/axes_grid/demo_colorbar_with_inset_locator.html
+    '''
+    if ax is None: 
+        ax = pylab.gca()
+    if width is None:
+        width = '30%' if orientation == 'horizontal' else '2%'
+    if height is None:
+        height = '2%' if orientation == 'horizontal' else '25%'
+        
+    if label is None:
+        try:
+            label = mappable.get_label()
+            if label.startswith('_'):
+                # hide internal names
+                label = ''
+        except:
+            label = ''
+    
+    
+    
+    tmp = dict(
+        nticks=3,
+        ticks=None,
+        ticknames=None,
+        tickfmt=None,
+        tickfcn=None,
+        orientation=orientation,
+        rotate=None,
+        outline=True,
+    )
+    tmp.update(kwargs)
+    nticks = tmp.pop('nticks')
+    ticks = tmp.pop('ticks')
+    tickfmt = tmp.pop('tickfmt')
+    tickfcn = tmp.pop('tickfcn')
+    ticknames = tmp.pop('ticknames')
+    rotate = tmp.pop('rotate')
+    outlinetext = tmp.pop('outline')
+    
+    if 'cax' not in tmp:
+        if axes_kwargs is None:
+            axes_kwargs = {'borderpad':borderpad}
+        tmp['cax'] = inset_axes(ax, width=width, height=height, loc=loc, **axes_kwargs)
+    
+    cb = pylab.colorbar(mappable, **tmp)
+    cb.set_label(label)
+    
+    if ticks is None:
+        ticks = np.linspace(cb.vmin, cb.vmax, nticks)
+    cb.set_ticks(ticks)
+    
+    if tickfcn is not None:
+        ticks = map(tickfcn, ticks)
+    
+    if tickfmt is not None:
+        cb.set_ticklabels(map(tickfmt.format, ticks))
+    
+    if ticknames is not None:
+        cb.set_ticklabels(ticknames)
+    
+    if rotate is not None:
+        if not isinstance(rotate, (int,float)):
+            rotate = 90
+            
+        pylab.setp(pylab.xticks(axes=cb.ax)[1], rotation=rotate, ha='center')
+    
+    if outlinetext:
+        if orientation == 'horizontal':
+            items = [cb.ax.xaxis.get_label(),
+                     cb.ax.xaxis.get_ticklabels()]
+        else:
+            items = [cb.ax.yaxis.get_label(),
+                     cb.ax.yaxis.get_ticklabels()]
+        outline(items)
+    
+    
+    pylab.sca(ax)
+    return cb
 
 
 
