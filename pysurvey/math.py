@@ -159,7 +159,7 @@ def fit_gauss(x,y,params):
     mu, sigma, height = map(Parameter,params)
     def f(xx): 
         return height() * np.exp(-((xx-mu())/sigma())**2)
-    return fit(gauss, [mu, sigma, height], x, y)
+    return fit(f, [mu, sigma, height], x, y)
 
 
 
