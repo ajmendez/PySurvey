@@ -65,7 +65,7 @@ def plothist(*args, **kwargs):
     pylab.show()
 
 def hist(x,bins, weight=None, weights=None, index=None, 
-         norm=None, frac=False, total=False, 
+         norm=None, frac=False, total=False, dist=False,
          cumulative=False, revcumulative=False,
          bottom=None, filled=False, 
          **kwargs):
@@ -110,6 +110,9 @@ def hist(x,bins, weight=None, weights=None, index=None,
         v = v/float(np.max(v))*float(norm)
     if total:
         v = v / (1.0*np.sum(v))
+    
+    if dist:
+      v /= d
     
     if bottom is not None:
         v += bottom
@@ -260,6 +263,7 @@ def icolorbar(mappable, loc=2, orientation='horizontal', borderpad=1,
     
     http://matplotlib.org/examples/axes_grid/demo_colorbar_with_inset_locator.html
     '''
+    
     if ax is None: 
         ax = pylab.gca()
     if width is None:
@@ -287,6 +291,8 @@ def icolorbar(mappable, loc=2, orientation='horizontal', borderpad=1,
         orientation=orientation,
         rotate=None,
         outline=True,
+        outline_props=dict(),
+        color=None,
     )
     tmp.update(kwargs)
     nticks = tmp.pop('nticks')
@@ -296,6 +302,8 @@ def icolorbar(mappable, loc=2, orientation='horizontal', borderpad=1,
     ticknames = tmp.pop('ticknames')
     rotate = tmp.pop('rotate')
     outlinetext = tmp.pop('outline')
+    outline_props = tmp.pop('outline_props')
+    color = tmp.pop('color')
     
     if 'cax' not in tmp:
         if axes_kwargs is None:
@@ -324,6 +332,14 @@ def icolorbar(mappable, loc=2, orientation='horizontal', borderpad=1,
             
         pylab.setp(pylab.xticks(axes=cb.ax)[1], rotation=rotate, ha='center')
     
+    if color is not None:
+        if orientation == 'horizontal':
+            pylab.setp(pylab.getp(cb.ax.axes, 'xticklabels'), color=color)
+            pylab.setp(pylab.getp(cb.ax.xaxis, 'label'), color=color)
+        else:
+            pylab.setp(pylab.getp(cb.ax.axes, 'yticklabels'), color=color)
+            pylab.setp(pylab.getp(cb.ax.yaxis, 'label'), color=color)
+    
     if outlinetext:
         if orientation == 'horizontal':
             items = [cb.ax.xaxis.get_label(),
@@ -331,7 +347,7 @@ def icolorbar(mappable, loc=2, orientation='horizontal', borderpad=1,
         else:
             items = [cb.ax.yaxis.get_label(),
                      cb.ax.yaxis.get_ticklabels()]
-        outline(items)
+        outline(items, **outline_props)
     
     
     pylab.sca(ax)
@@ -514,12 +530,15 @@ def setup(subplt=None, figsize=None, ax=None,
         if xticknames is not None:
             ax.xaxis.set_major_formatter(matplotlib.ticker.FixedFormatter(xticknames))
     if xtickrotate is not None:
-        tmp = dict(rotation=30, ha='right')
-        if isinstance(xtickrotate, dict):
-            tmp.update(xtickrotate)
+        if xtickrotate == 'vertical':
+            pylab.xticks(xtickv, xticknames, rotation='vertical')
         else:
-            tmp['rotation'] = xtickrotate
-        pylab.setp(pylab.xticks()[1], **tmp)
+            tmp = dict(rotation=30, ha='right')
+            if isinstance(xtickrotate, dict):
+                tmp.update(xtickrotate)
+            else:
+                tmp['rotation'] = xtickrotate
+            pylab.setp(pylab.xticks()[1], **tmp)
     
     if ytickv is not None:
         ax.yaxis.set_major_locator(matplotlib.ticker.FixedLocator(ytickv))
