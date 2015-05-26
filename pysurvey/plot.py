@@ -22,6 +22,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
+from matplotlib.patches import Polygon
+from matplotlib.collections import PolyCollection, PatchCollection
+
+
 # Package Imports
 from pysurvey import util, file, math, oldmangle
 # from util import splog, embiggen, minmax, getargs
@@ -1328,3 +1332,151 @@ def dateticks(fmt='%Y-%m', **kwargs):
     tmp.update(kwargs)
     pylab.setp(pylab.xticks()[1], **tmp)
 
+
+
+
+
+
+
+
+def density(x,y, z=None, weights=None, 
+            bins=None, nbins=None, 
+            extent=None, ngcextent=False, radecbins=False, remap_ra=False,
+            extent_embiggen=None,
+            numbernorm=False,
+            vrange=None, logvrange=False,
+            sqrt=False,
+            areaunit=False, colorbar=True,
+            ax = None, trans=None, mesh=False,
+            hidezeros=False, maskzeros=False, 
+            maskthreshold=False, threshold=None,
+            noplot=False,
+            **kwargs):
+    '''makes nbins if bins is not defined
+    radecbins should always be used with mesh=True!!!!
+    
+    '''
+    if ax is None:
+        ax = pylab.gca()
+    if trans is None:
+        trans = ax.transData
+    
+    if remap_ra:
+      x = np.array([a-360.0 if a > 300 else a for a in x])
+    
+    
+    if vrange is None: 
+        vrange=[None,None]
+    if extent is None:
+        extent = [np.min(x), np.max(x), np.min(y), np.max(y)]
+    if ngcextent:
+        extent = [132.1, 228.9, -1.1, 56.1]
+    
+    if extent_embiggen is not None:
+        extent = embiggen(extent[:2], extent_embiggen) + embiggen(extent[2:], extent_embiggen)
+    
+    
+    if nbins is None:
+        nbins = 100
+    if isinstance(nbins, int):
+        nbins = (nbins,nbins)
+    if bins is None:
+        bins = ( np.linspace(extent[0], extent[1], nbins[0]+1),
+                 np.linspace(extent[2], extent[3], nbins[1]+1) )
+    if radecbins:
+        tr = np.deg2rad(extent[:2])/(2*np.pi)
+        pr  = (np.cos(np.deg2rad(extent[2:])+np.pi/2)+1)/2.0
+        rabins = np.rad2deg(2*np.pi*np.linspace(tr[0], tr[1], nbins[0]+1) )
+        decbins = np.rad2deg(np.arccos(2*np.linspace(pr[0], pr[1], nbins[1]+1)-1)-np.pi/2)
+        bins = (rabins, decbins)
+    
+    if z is not None:
+        numbernorm = True
+        w = z 
+        w[np.where(~np.isfinite(z))] = 0
+    else:
+        w = weights
+    
+    
+    H,xx,yy = np.histogram2d(x,y, bins=bins, weights=w)
+    if areaunit:
+        H /= np.diff(xx)*np.diff(yy)
+    
+    
+    if hidezeros:
+        ii = np.where(H==0)
+        H[ii] = np.nan
+    
+    if maskzeros:
+        H = np.ma.MaskedArray(H, (H==0))
+    
+    if maskthreshold:
+        if threshold is None:
+            threshold = 0
+        H = np.ma.MaskedArray(H, (H<threshold))
+    
+    if numbernorm:
+        N = np.histogram2d(x,y, bins=bins, weights=weights)[0]
+        ii = np.where(N > 0)
+        H[ii] /= N[ii]
+    
+    if logvrange:
+        H = np.log10(H)
+    if sqrt:
+        H = np.sqrt(H)
+
+    if noplot:
+        return bins[0], bins[1], H.T
+        
+
+    if mesh:
+        tmp = dict(
+            edgecolors='none',
+            vmin=vrange[0], vmax=vrange[1], 
+            clip_on=True, clip_path=ax.patch,
+            cmap=pylab.cm.OrRd, transform=trans
+        )
+        tmp.update(kwargs)
+        im = ax.pcolormesh(bins[0], bins[1], H.T, **tmp)
+        im.set_clip_on(True) # Broken?!
+        im.set_clip_path(ax.patch)
+        # im.set_transform(trans)
+    else:
+        tmp = dict(
+            extent=minmax(xx)+minmax(yy),
+             origin='lower', interpolation='nearest', aspect='auto',
+             cmap=pylab.cm.OrRd, vmin=vrange[0], vmax=vrange[1]
+        )
+        tmp.update(kwargs)
+        im = ax.imshow(H.T, **tmp)
+
+    if colorbar:
+        tmp = pylab.gca()
+        cb = pylab.colorbar(im, shrink=0.7)
+        ticks = np.array(map(int, np.linspace(cb.vmin, cb.vmax, 5)))
+        cb.set_ticks(ticks)
+        # if areaunit:
+            # estimate area of bin and multiply
+            # N/bin = N/(area of bin) = N * 
+            # area = np.mean(np.diff(bins[0]))*np.mean(np.diff(bins[1]))
+            # ticks = ticks*area
+        if logvrange: 
+            if np.min(ticks) > 1:
+                ticks = np.array(map(int, ticks))
+                formatter = r'$10^{{{:d}}}$'
+            else:
+                ticks = 10.0**ticks
+                formatter = r'{:0.1f}'
+        else:
+            formatter = (r'{:0.0f}' if np.min(ticks) > 1 else '{:0.2f}')
+        
+    #     formater =  if logvrange else 
+        cb.set_ticklabels(map(lambda x:formatter.format(x), ticks))
+        if 'label' in kwargs: 
+            cb.set_label(kwargs['label'])
+        pylab.sca(tmp)
+    
+    im.xbins = bins[0]
+    im.ybins = bins[1]
+    im.Z = H
+    return im
