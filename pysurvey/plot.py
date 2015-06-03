@@ -586,9 +586,12 @@ def setup(subplt=None, figsize=None, ax=None,
     
     
     # some nice defaults
-    if grid:
+    if grid is True:
         pylab.grid(b=True, which='major', linestyle='solid', color='0.3', alpha=0.5)
         ax.set_axisbelow(True)
+    if grid is False:
+        pylab.grid('off')
+    
     
     if tickmarks:
         ax.tick_params('both', which='major', length=5, width=2)
@@ -1034,7 +1037,7 @@ def text(*args, **kwargs):
     
     if oline:
         outline(txt, **outline_prop)
-        
+    return txt
 
 
 
