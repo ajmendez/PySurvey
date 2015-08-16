@@ -1007,15 +1007,16 @@ def scontour(x,y, levels=None, nbin=20,
 
 ### Helper function things
 
-def outline(item, color='w', width='3'):
+def outline(item, color='w', width='3', **kwargs):
     '''Outlines an object'''
+    out = []
     if isinstance(item, (tuple, list)):
         for it in item:
-            outline(it, color=color, width=width)
+            out.append(outline(it, color=color, width=width))
     else:
-        item.set_path_effects(
-            [PathEffects.Stroke(linewidth=width, foreground=color),
-             PathEffects.Normal()])
+        tmp = PathEffects.Stroke(linewidth=width, foreground=color, **kwargs)
+        item.set_path_effects([tmp,PathEffects.Normal()])
+        return tmp
 
 
 def text(*args, **kwargs):
