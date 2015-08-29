@@ -226,22 +226,22 @@ def for_print(*args, **kwargs):
     
     names = _name()
     if names is not None:
-        print ', '.join(['{0:>{width}}'.format(fmt(name), width=(kwargs['width']+2)*(len(arg[0]))-2)
+        print(', '.join(['{0:>{width}}'.format(fmt(name), width=(kwargs['width']+2)*(len(arg[0]))-2)
                          if isinstance(arg[0], collections.Iterable) and not isinstance(arg[0], str) else
                          '{0:>{width}}'.format(fmt(name), width=kwargs['width'])
-                         for name,arg in zip(names,args)])
+                         for name,arg in zip(names,args)]))
     
     
     # import pdb; pdb.set_trace()
     for i,group in enumerate(zip(*args)):
         group = _flatten(group)
         
-        print ', '.join(['{0: {w}.{p}f}'.format(item, w=kwargs['width'], p=kwargs['precision']) 
+        print(', '.join(['{0: {w}.{p}f}'.format(item, w=kwargs['width'], p=kwargs['precision']) 
                          if not isinstance(item,(str,bool)) else 
                          '{0:>{width}}'.format(str(item), width=kwargs['width'])
-                         for item in group ])
+                         for item in group ]))
         if kwargs['n'] is not None and i > kwargs['n']:
-            print ' ... [> %i rows]'%(kwargs['n'])
+            print(' ... [> %i rows]'%(kwargs['n']))
             return
 
 forprint = for_print
