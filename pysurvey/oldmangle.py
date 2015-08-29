@@ -373,7 +373,7 @@ class Mangle:
         return mng2
     #...
 
-    def graphics(self, getweight=False):
+    def graphics(self, getweight=False, npts=30):
         """Return an array of edge points, to plot these polygons.
 
         Calls the command-line 'poly2poly' to generate a temporary graphics
@@ -393,7 +393,7 @@ class Mangle:
         tempIn = tempfile.NamedTemporaryFile('rw+b')
         self.writeply(tempIn.name)
         tempOut = tempfile.NamedTemporaryFile('rw+b')
-        call = ' '.join(('poly2poly -j0 -k0 -q -ol30',tempIn.name,tempOut.name))
+        call = ' '.join(('poly2poly -j0 -k0 -q -ol{}'.format(npts),tempIn.name,tempOut.name))
         subprocess.call(call,shell=True)
         
         # NOTE: poly2poly -ol always outputs a separate weight file.

@@ -1,6 +1,7 @@
 #!/usr/bin/env python                                                           
 import threading, multiprocessing, os, time, datetime, sys, signal, traceback, Queue
 from multiprocessing.pool import Pool
+# import setproctitle
 from pprint import pprint
 
 from pysurvey import util
@@ -83,11 +84,18 @@ def multi_process(fcn, args, n=None):
         except:
             n = 2
     util.splog('Starting run with %d processes'%(n), color='green')
-
+    
+    
+    # get the arguments
+    tmp = getargs(fcn,args)
+    # only spin up enough processes as needed
+    if len(tmp) < n:
+        n = len(tmp)+1
+    
     start = util.deltatime()
     pool = multiprocessing.Pool(n)
     # p = pool.map_async(do_work, [[fcn]+list(x) for x in args])
-    tmp = getargs(fcn,args)
+    
     # print tmp
     p = pool.map_async(do_work, tmp)
     try:
