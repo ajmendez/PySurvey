@@ -415,6 +415,7 @@ def setup(subplt=None, figsize=None, ax=None,
           xr=None, xmin=None, xmax=None,
           yr=None, ymin=None, ymax=None,
           xlog=False, ylog=False,
+          xoffset=None, yoffset=None,
           xlabel=None, ylabel=None, 
           xtickv=None, xticknames=None, xtickrotate=None,
           ytickv=None, yticknames=None, ytickrotate=None,
@@ -727,7 +728,15 @@ def setup(subplt=None, figsize=None, ax=None,
         ax.secondy = ax2
         pylab.sca(ax)
 
-    
+    if xoffset is False:
+        tmp = matplotlib.ticker.ScalarFormatter(useOffset=False)
+        tmp.set_scientific(False)
+        ax.xaxis.set_major_formatter(tmp)
+    if yoffset is False:
+        tmp = matplotlib.ticker.ScalarFormatter(useOffset=False)
+        tmp.set_scientific(False)
+        ax.yaxis.set_major_formatter(tmp)
+        
     
     if rasterized:
         ax.set_rasterized(True)

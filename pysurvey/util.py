@@ -96,7 +96,29 @@ def start_deltatime():
     return datetime.datetime.now()
 
 
-def deltatime(start=None):
+def print_deltatime(seconds):
+    '''formats a nice set of strings'''
+    out = []
+    epocs = [ [86400, 2, 'day'],
+              [3600,  2, 'hour'],
+              [60,    2, 'minute'],
+              [1,     2, 'second'],
+              [0.001, 3, 'millisecond'] ]
+    factors = zip(*epocs)[0]
+    while seconds > min(factors):
+      for factor, d, noun in epocs:
+        if seconds >= factor:
+          delta = int(seconds/factor)
+          if delta > 1: noun +='s'
+          s = '' if delta > 1 else ' '
+          out.append('%{:d}d %s%s'.format(d)%(delta,s,noun))
+          seconds -= factor*(delta)
+  
+    n = 2 if len(out) > 2 else len(out)
+    return ', '.join(out[:n])
+
+
+def deltatime(start=None, gettime=False):
   '''From a start datetime object get a nice string of 'x hours, y minutes, z seconds'
   of time passed since the start. 
   
@@ -112,22 +134,19 @@ def deltatime(start=None):
   diff = datetime.datetime.now() - start
   # seconds = diff.seconds # limited to 1 second, so lets get fractions
   seconds = diff.days*86400 + diff.seconds + diff.microseconds/float(10**6)
-  out = []
-  epocs = [ [86400, 'day'],
-            [3600,'hour'],
-            [60,'minute'],
-            [1,'second'],
-            [0.001,'milisecond'] ]
-  factors,tmp = zip(*epocs)
-  while seconds > min(factors):
-    for factor, noun in epocs:
-      if seconds >= factor:
-        delta = int(seconds/factor)
-        if delta > 1: noun +='s'
-        out.append('%d %s'%(delta,noun))
-        seconds -= factor*(delta)
-  
-  return ', '.join(out)
+  if gettime:
+      return seconds
+  return print_deltatime(seconds)
+
+def projecttime(start=None, index=None, number=None):
+    '''Return a nicely formated string of the time it will take to finish this.'''
+    if start is None:
+        return deltatime()
+    seconds = deltatime(start, True)
+    projected = (number-index) * (seconds*1.0/index)
+    return print_deltatime(projected)
+    
+
 
 
 
