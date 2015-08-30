@@ -10,7 +10,7 @@ import numpy as np
 import pyfits
 
 # Package Imports
-from util import splog
+from pysurvey.util import splog
 
 
 def nicefile(filename):
@@ -77,8 +77,8 @@ class Cat(object):
         self.names = map(str.lower, self.data.columns.names)
     
     def __repr__(self):
-        print self.__str__()
-        print
+        print(self.__str__())
+        print()
         return "%s.%s('%s', index=%d)"%(self.__class__.__module__,
                                       self.__class__.__name__,
                                       self.filename,

@@ -41,7 +41,7 @@ import os
 import re
 import string
 import copy
-from itertools import izip
+# from itertools import izip
 
 
 useUtils = False
@@ -50,8 +50,8 @@ useUtils = False
 #     import mangle_utils
 # except ImportError as e:
 #     print "Error, could not import mangle_utils:",e
-#     print "Mangle routines will still function, but be slower."
-#     print "Check that you have built mangle_utils.so (see README.txt)."
+#     print("Mangle routines will still) function, but be slower."
+#     print("Check that you have) built mangle_utils.so (see README.txt)."
 #     useUtils = False
 # else:
 #     useUtils = True
@@ -191,7 +191,7 @@ class Mangle:
         #    return None
         #else:
         goodpolys = -ones(len(ra),dtype=int)
-        for i,poly in izip(self.polyids,self.polylist):
+        for i,poly in zip(self.polyids,self.polylist):
             test = self.inpoly_vec(poly,x0,y0,z0)
             goodpolys[test] = i
         return goodpolys
@@ -276,7 +276,7 @@ class Mangle:
         theta = pi/180. * (90.0-dec)
         phi   = pi/180. * ra
         area  = -1.0
-        for a,poly in izip(self.areas,self.polylist):
+        for a,poly in zip(self.areas,self.polylist):
             if self.inpoly_spam(poly,theta,phi):
                 area = a
                 break
@@ -335,9 +335,8 @@ class Mangle:
                 str = "polygon %10d ( %d caps,"%(self.polyids[i],len(self.polylist[i]))
                 str+= " %.8f weight, %.15f str):\n"%(self.weights[i],self.areas[i])
             except:
-                print i, self.npoly #len(self.polylist), len(self.polyids), len(self.weights), len(self.areas)
-                raise
-            ff.write(str)
+                print(i, self.npoly) #len(self.polylist), len(self.polyids), len(self.weights), len(self.areas)
+                raise(            (f.write(str)))
             for cap in self.polylist[i]:
                 ff.write("%25.20f %25.20f %25.20f %25.20f\n"%\
                   (cap[0],cap[1],cap[2],cap[3]))
@@ -450,7 +449,7 @@ class Mangle:
         line = ff.readline()
         ss = re.match(r"(\d+)\s+polygons",line)
         if ss==None:
-            raise RuntimeError,"Can not parse 1st line of %s"%fn
+            raise RuntimeError("Can not parse 1st line of %s"%fn)
         else:
             self.npoly = int( ss.group(1) )
         self.polylist = empty(self.npoly,dtype='object')
@@ -563,7 +562,7 @@ class Mangle:
         self.npixels = len(set(self.pixels))
 
         self.ncaps = data['NCAPS']
-        for i,n,x in izip(self.polyids,self.ncaps,data):
+        for i,n,x in zip(self.polyids,self.ncaps,data):
             self.polylist[i] = zeros((n,4))
             self.polylist[i][...,:-1] = x['XCAPS'][:3*n].reshape(n,3)
             self.polylist[i][...,-1] = x['CMCAPS'][:n]
@@ -598,20 +597,20 @@ class Mangle:
             self.convert_db(fn)
         elif fn[-4:] == '.ply':
             if not os.path.exists(fn):
-                raise RuntimeError,"Can not find %s"%fn
+                raise RuntimeError("Can not find %s"%fn)
             self.filename = fn # useful to keep this around.
             self.read_ply_file(fn)
         elif fn[-5:] == '.fits':
             if not os.path.exists(fn):
-                raise RuntimeError,"Can not find %s"%fn
+                raise RuntimeError("Can not find %s"%fn)
             self.filename = fn # useful to keep this around.
             self.read_fits_file(fn)
         else:
-            raise RuntimeError,"Unknown file extension for %s"%fn
+            raise RuntimeError("Unknown file extension for %s"%fn)
 
         if len(self.polylist) != self.npoly:
-            print "Got %d polygons, expecting %d."%\
-              (len(self.polylist),self.npoly)
+            print("Got %d polygons, expecting %d."%\
+              (len(self.polylist),self.npoly))
         # Check whether the polyids are sequential and range from 0 to npoly
         # If they don't, then there may be a problem with the file.
         # NOTE: this should always be correct for current_boss_geometry.
@@ -620,9 +619,9 @@ class Mangle:
             if i != polyid:
                 badcounter += 1
         if badcounter > 0:
-            print "WARNING!!!!"
-            print "Found",badcounter,"polygons out of order."
-            print "Reordering polygons so that polyid=index"
+            print("WARNING!!!!")
+            print("Found",badcounter,"polygons out of order.")
+            print("Reordering polygons so that polyid=index")
             sorter = argsort(self.polyids)
             self.polylist = take(self.polylist,sorter)
             self.weights = self.weights[sorter]

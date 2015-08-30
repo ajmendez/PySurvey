@@ -8,7 +8,10 @@ import warnings
 from datetime import datetime
 
 # Installed Libraries
-import pylab
+# import pylab
+# import matplotlib.pyplot as pylab
+import matplotlib.pylab as pylab
+
 import numpy as np
 import collections
 import matplotlib
@@ -713,7 +716,7 @@ def setup(subplt=None, figsize=None, ax=None,
                 ii = np.where(arr >= 1e4)
                 tmp['yticknames'][ii] = [fmt[2].format(np.log10(x)) for x in arr[ii]]
             
-        print tmp
+        print(tmp)
         
         ax2 = ax.twinx() # I have never understood this
         ax2.set_ylabel(tmp['ylabel'])
