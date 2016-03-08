@@ -298,6 +298,7 @@ def splog(*args, **kwargs):
     #              'yellow':colored.red}
     # f = colordict.get(kwargs.get('color','blue'), colored.blue)
     f = getattr(colored, kwargs.get('color','blue'), colored.blue)
+    multiline = kwargs.pop('multiline',False)
     
     
     
@@ -341,9 +342,13 @@ def splog(*args, **kwargs):
             pass
         prefix = '%s>'%(os.getpid())+prefix
     
-    output = ('%s'%(prefix) + 
-              f('%s.%s '%(module,name))+
-              ' '.join('%s'%s for s in args))
+    if multiline:
+        p = '%s'%(prefix) + f('%s.%s'%(module,name))
+        output = '\n'.join('%s %s'%(p, s) for s in args)
+    else:
+        output = ('%s'%(prefix) + 
+                  f('%s.%s '%(module,name))+
+                  ' '.join('%s'%s for s in args))
     
     if SPLOG['outfile'] is not None:
         # There is probably a better way of keeping this file open

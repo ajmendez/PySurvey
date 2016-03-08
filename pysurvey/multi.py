@@ -37,10 +37,11 @@ def do_work(args):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     
     # Attempt to run the function with a set of arguments
+    out = None
     try:
         time.sleep(0.1) # noop to prevent spawning after ctrl-c
         fcn, args = args[0], args[1:]
-        fcn(*args)
+        out = fcn(*args)
     except KeyboardInterrupt, e:
         raise
     except:
@@ -50,6 +51,7 @@ def do_work(args):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
         raise
+    return out
 
 
 def getargs(fcn, args):
@@ -97,6 +99,7 @@ def multi_process(fcn, args, n=None):
     # p = pool.map_async(do_work, [[fcn]+list(x) for x in args])
     
     # print tmp
+    results = None
     p = pool.map_async(do_work, tmp)
     try:
         # This is the timeout to wait for the results.  We default to something
@@ -115,7 +118,7 @@ def multi_process(fcn, args, n=None):
         
     # look how nice this is
     util.splog("Finished!: %s"%(fcn.__name__), util.deltatime(start),color='green')
-
+    return results
 
 
 
