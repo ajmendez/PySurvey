@@ -1360,7 +1360,8 @@ def density(x,y, z=None, weights=None,
             extent=None, ngcextent=False, radecbins=False, remap_ra=False,
             extent_embiggen=None,
             numbernorm=False,
-            vrange=None, logvrange=False,
+            xnorm=False, ynorm=False,
+            vrange=None, logvrange=False, vmin=None, vmax=None, vpercentile=None,
             sqrt=False,
             areaunit=False, colorbar=True,
             ax = None, trans=None, mesh=False,
@@ -1380,9 +1381,8 @@ def density(x,y, z=None, weights=None,
     if remap_ra:
       x = np.array([a-360.0 if a > 300 else a for a in x])
     
-    
     if vrange is None: 
-        vrange=[None,None]
+        vrange=[vmin,vmax]
     if extent is None:
         extent = [np.min(x), np.max(x), np.min(y), np.max(y)]
     if ngcextent:
@@ -1417,6 +1417,17 @@ def density(x,y, z=None, weights=None,
     H,xx,yy = np.histogram2d(x,y, bins=bins, weights=w)
     if areaunit:
         H /= np.diff(xx)*np.diff(yy)
+    if xnorm:
+        H = (H.T/np.histogram(x, bins[0])[0]).T
+    if ynorm:
+        H /= np.histogram(y, bins[1])[0]
+    if vpercentile is not None:
+        vmin = np.percentile(H[np.isfinite(H)], 100-vpercentile)
+        vmax = np.percentile(H[np.isfinite(H)], vpercentile)
+        vrange = [vmin, vmax]
+        
+        
+        
     
     
     if hidezeros:
