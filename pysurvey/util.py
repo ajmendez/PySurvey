@@ -53,7 +53,20 @@ def setup_stop():
             pdb.pm()
     sys.excepthook = excepthook
 
-
+def edit(item):
+    '''a simple edit function'''
+    from subprocess import call
+    
+    try:
+        if isinstance(item, str):
+            call(['open', '-a', 'TextMate', item])
+        else:
+            filename = item.__file__.replace('.pyc','.py')
+            call(['open', '-a', 'TextMate', filename])
+        return
+    except:
+        pass
+    print item
 
 
 def gethostname():
